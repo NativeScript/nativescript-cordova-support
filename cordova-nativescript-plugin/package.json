@@ -15,6 +15,11 @@
     },
     "hooks": [
       {
+        "type": "after-prepare",
+        "script": "./lib/hooks/after-prepare.js",
+        "inject": true
+      },
+      {
         "type": "before-prepare",
         "script": "./lib/hooks/before-prepare.js",
         "inject": true

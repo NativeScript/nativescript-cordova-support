@@ -173,7 +173,12 @@ function processCordovaProject(cordovaProjectDir, platform, pluginDataObjects, i
     const cdvBuildGradleFileContents = fs.readFileSync(cdvBuildGradleFilePath, "utf8");
 
     let subProjectDependenciesSection = getStringBetween(cdvBuildGradleFileContents, CORDOVA_SUBPROJECT_DEPENDENCIES_START_STRING, CORDOVA_SUBPROJECT_DEPENDENCIES_END_STRING);
+    // Remove cordova-specific implementation
     subProjectDependenciesSection = subProjectDependenciesSection.replace('implementation(project(path: ":CordovaLib"))', '');
+
+    // Unify appcompat and support versions accross all plugins
+    subProjectDependenciesSection = getUnifiedAppCompatSupportContent(subProjectDependenciesSection);
+
     let pluginGradleExtensionsSection = getStringBetween(cdvBuildGradleFileContents, PLUGIN_GRADLE_EXTENSIONS_START_STRING, PLUGIN_GRADLE_EXTENSIONS_END_STRING);
     pluginGradleExtensionsSection = pluginGradleExtensionsSection.replace(/\.\.\//g, './');
     fs.appendFileSync(destIncludeGradle, `
@@ -185,6 +190,7 @@ dependencies {
     ${subProjectDependenciesSection}
 }`);
 
+
     // Copy plugin gradle directories
     pluginDataObjects.forEach(pluginData => {
         const pluginGradleDir = path.join(platformsAppDirectory, "..", pluginData.id);
@@ -192,8 +198,25 @@ dependencies {
             fse.copySync(pluginGradleDir, path.join(currentPluginPlatformsDir, pluginData.id));
         }
     });
+
+    // Unify appcompat and support versions accross all plugin's .gradle files
+    const cordovaPluginsGradleFilesLocations = pluginGradleExtensionsSection.replace(/apply from: "(.*?)"/g, "$1")
+        .split("\n")
+        .filter(location => !!location);
+    cordovaPluginsGradleFilesLocations.forEach(cordovaPluginsGradleFileLocation => {
+        const fullPath = path.join(currentPluginPlatformsDir, cordovaPluginsGradleFileLocation);
+        const gradleContents = fs.readFileSync(fullPath, "utf8");
+        const unifiedGradleContents = getUnifiedAppCompatSupportContent(gradleContents);
+        fs.writeFileSync(fullPath, unifiedGradleContents);
+    });
 }
 
 function getStringBetween(str, start, end) {
     return str.substring(str.indexOf(start) + start.length, str.indexOf(end));
+}
+
+function getUnifiedAppCompatSupportContent(originalContent) {
+    return originalContent
+        .replace(/(com.android.support:appcompat-v7:).*?(['"])/g, "$1$supportVersion$2")
+        .replace(/(com.android.support:support-v4:).*?(['"])/g, "$1$supportVersion$2");
 }

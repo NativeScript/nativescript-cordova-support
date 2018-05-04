@@ -6,7 +6,6 @@ const BUILD_GRADLE_FILE_NAME = "build.gradle";
 const skipDirs = ["java", "res", "AndroidManifest.xml", BUILD_GRADLE_FILE_NAME];
 
 module.exports = function (hookArgs) {
-    debugger;
     const pluginRoot = path.join(__dirname, "..", "..");
     const currentPluginPlatformsDir = path.join(pluginRoot, "platforms", "android");
 
