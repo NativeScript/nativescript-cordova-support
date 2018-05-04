@@ -1,0 +1,25 @@
+{
+  "description": "NativeScript Application",
+  "license": "SEE LICENSE IN <your-license-filename>",
+  "readme": "NativeScript Application",
+  "repository": "<fill-your-repository-here>",
+  "nativescript": {
+    "id": "org.nativescript.cdvNativeTest",
+    "tns-android": {
+      "version": "4.0.0"
+    }
+  },
+  "dependencies": {
+    "cordova-nativescript-plugin": "file:..\\cordova-nativescript-plugin",
+    "cordova-plugin-telerik-imagepicker": "2.1.10",
+    "nativescript-theme-core": "~1.0.4",
+    "tns-core-modules": "~4.0.0"
+  },
+  "devDependencies": {
+    "babel-traverse": "6.4.5",
+    "babel-types": "6.4.5",
+    "babylon": "6.4.5",
+    "cordova": "^8.0.0",
+    "lazy": "1.0.11"
+  }
+}

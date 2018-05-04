@@ -1,0 +1,31 @@
+{
+  "version": "0.1.0",
+  "name": "cordova-nativescript-plugin",
+  "description": "This plugin enables using cordova plugins inside a nativescript project",
+  "issue": "",
+  "keywords": [],
+  "scripts": {
+    "postinstall": "node postinstall.js",
+    "preuninstall": "node preuninstall.js"
+  },
+  "nativescript": {
+    "platforms": {
+      "android": "4.0.0",
+      "ios": "4.0.0"
+    },
+    "hooks": [
+      {
+        "type": "before-prepare",
+        "script": "./lib/hooks/before-prepare.js",
+        "inject": true
+      }
+    ]
+  },
+  "dependencies": {
+    "fs-extra": "^5.0.0",
+    "mkdirp": "^0.5.1",
+    "nativescript-hook": "0.2.0",
+    "temp": "0.8.3",
+    "xml-js": "1.6.2"
+  }
+}
