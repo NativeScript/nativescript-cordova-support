@@ -1,5 +1,5 @@
 const path = require('path');
-const fs = require('fs')
+const fs = require('fs');
 const convert = require('xml-js');
 const mkdirp = require('mkdirp');
 const fse = require('fs-extra')
@@ -176,9 +176,9 @@ function processCordovaProject(cordovaProjectDir, platform, pluginDataObjects, i
     subProjectDependenciesSection = subProjectDependenciesSection.replace('implementation(project(path: ":CordovaLib"))', '');
     let pluginGradleExtensionsSection = getStringBetween(cdvBuildGradleFileContents, PLUGIN_GRADLE_EXTENSIONS_START_STRING, PLUGIN_GRADLE_EXTENSIONS_END_STRING);
     pluginGradleExtensionsSection = pluginGradleExtensionsSection.replace(/\.\.\//g, './');
-    // TODO: Temporary
-    pluginGradleExtensionsSection = "";
     fs.appendFileSync(destIncludeGradle, `
+ext.cdvMinSdkVersion = null
+
 ${pluginGradleExtensionsSection}
 
 dependencies {

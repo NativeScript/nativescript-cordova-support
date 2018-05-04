@@ -18,6 +18,11 @@
         "type": "before-prepare",
         "script": "./lib/hooks/before-prepare.js",
         "inject": true
+      },
+      {
+        "type": "before-buildAndroidPlugin",
+        "script": "./lib/hooks/before-buildAndroidPlugin.js",
+        "inject": true
       }
     ]
   },

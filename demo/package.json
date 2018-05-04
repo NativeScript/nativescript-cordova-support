@@ -13,6 +13,7 @@
     "cordova-nativescript-plugin": "file:..\\cordova-nativescript-plugin",
     "cordova-plugin-telerik-imagepicker": "2.1.10",
     "nativescript-theme-core": "~1.0.4",
+    "phonegap-plugin-barcodescanner": "git+https://github.com/Telerik-Verified-Plugins/BarcodeScanner.git",
     "tns-core-modules": "~4.0.0"
   },
   "devDependencies": {
