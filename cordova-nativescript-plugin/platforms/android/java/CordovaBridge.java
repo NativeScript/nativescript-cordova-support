@@ -55,8 +55,8 @@ public class CordovaBridge {
         try {
             // Tell the resourceApi what thread the JS is running on.
             CordovaResourceApi.jsThread = Thread.currentThread();
-
-            pluginManager.exec(service, action, callbackId, arguments);
+            // TODO: remove this
+            // pluginManager.exec(service, action, callbackId, arguments);
             String ret = null;
             if (!NativeToJsMessageQueue.DISABLE_EXEC_CHAINING) {
                 ret = jsMessageQueue.popAndEncode(false);

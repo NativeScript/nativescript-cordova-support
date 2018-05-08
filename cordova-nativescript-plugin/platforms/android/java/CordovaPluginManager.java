@@ -23,8 +23,6 @@ public class CordovaPluginManager {
 	private Map<String, PluginEntry> pluginsMap;
 
 	public CordovaPluginManager() {
-		
-
 		Log.w(TAG, "Instantiated CordovaPluginManager");
 	}
 
