@@ -21,6 +21,7 @@ package org.apache.cordova;
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.Intent;
+import android.app.Activity;
 import android.net.Uri;
 import android.view.Gravity;
 import android.view.KeyEvent;
@@ -29,10 +30,10 @@ import android.view.ViewGroup;
 import android.webkit.WebChromeClient;
 import android.widget.FrameLayout;
 
+import org.apache.cordova.NativescriptCordovaBridge;
 import org.apache.cordova.engine.SystemWebViewEngine;
 import org.json.JSONException;
 import org.json.JSONObject;
-
 import java.lang.reflect.Constructor;
 import java.lang.UnsupportedOperationException;
 import java.util.ArrayList;
@@ -50,21 +51,19 @@ public class CordovaWebViewImpl implements CordovaWebView {
     public static final String TAG = "CordovaWebViewImpl";
 
     private PluginManager pluginManager;
-
-    // protected final CordovaWebViewEngine engine;
+    private Context context;
+    private NativescriptCordovaBridge nativescriptCordovaBridge;
     private CordovaInterface cordova;
-
+    private CordovaResourceApi resourceApi;
     private CordovaPreferences preferences;
 
     public static CordovaWebViewEngine createEngine(Context context, CordovaPreferences preferences) {
         throw new UnsupportedOperationException();
     }
 
-    public CordovaWebViewImpl(PluginManager pluginManager) {
-        this.pluginManager = pluginManager;
-    }
-
-    public CordovaWebViewImpl() {
+    public CordovaWebViewImpl(Context context, NativescriptCordovaBridge nativescriptCordovaBridge) {
+        this.context = context;
+        this.nativescriptCordovaBridge = nativescriptCordovaBridge;
     }
 
     // Convenience method for when creating programmatically (not from Config.xml).
@@ -75,8 +74,16 @@ public class CordovaWebViewImpl implements CordovaWebView {
 
     @Override
     public void init(CordovaInterface cordova, List<PluginEntry> pluginEntries, CordovaPreferences preferences) {
+        if (this.cordova != null) {
+            throw new IllegalStateException();
+        }
+
         this.cordova = cordova;
         this.preferences = preferences;
+        this.pluginManager = new PluginManager(this, this.cordova, pluginEntries);
+        this.resourceApi = new CordovaResourceApi(this.context, pluginManager);
+
+        this.pluginManager.init();
     }
 
     @Override
@@ -126,7 +133,7 @@ public class CordovaWebViewImpl implements CordovaWebView {
 
     @Override
     public void sendPluginResult(PluginResult cr, String callbackId) {
-        throw new UnsupportedOperationException();
+        nativescriptCordovaBridge.sendPluginResult(cr, callbackId);
     }
 
     @Override
@@ -143,7 +150,7 @@ public class CordovaWebViewImpl implements CordovaWebView {
     }
     @Override
     public CordovaResourceApi getResourceApi() {
-        throw new UnsupportedOperationException();
+        return resourceApi;
     }
     @Override
     public CordovaWebViewEngine getEngine() {
@@ -155,7 +162,7 @@ public class CordovaWebViewImpl implements CordovaWebView {
     }
     @Override
     public Context getContext() {
-        throw new UnsupportedOperationException();
+       return this.context;
     }
 
     private void sendJavascriptEvent(String event) {
@@ -223,11 +230,19 @@ public class CordovaWebViewImpl implements CordovaWebView {
     }
     @Override
     public void handlePause(boolean keepRunning) {
-        throw new UnsupportedOperationException();
+        if (!isInitialized()) {
+            return;
+        }
+
+        pluginManager.onPause(keepRunning);
     }
     @Override
     public void handleResume(boolean keepRunning) {
-        throw new UnsupportedOperationException();
+        if (!isInitialized()) {
+            return;
+        }
+
+        this.pluginManager.onResume(keepRunning);
     }
     @Override
     public void handleStart() {
@@ -245,6 +260,11 @@ public class CordovaWebViewImpl implements CordovaWebView {
     }
     @Override
     public void handleDestroy() {
-        throw new UnsupportedOperationException();
+        if (!isInitialized()) {
+            return;
+        }
+
+       // Forward to plugins
+       this.pluginManager.onDestroy();
     }
 }

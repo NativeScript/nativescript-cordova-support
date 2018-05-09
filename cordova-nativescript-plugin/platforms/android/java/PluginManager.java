@@ -19,13 +19,10 @@
 package org.apache.cordova;
 
 import java.util.Collection;
-import java.util.ArrayList;
 import java.util.LinkedHashMap;
 
 import org.json.JSONException;
-import android.app.Activity;
-import java.lang.reflect.Field;
-import java.util.Map;
+
 import android.content.Intent;
 import android.content.res.Configuration;
 import android.net.Uri;
@@ -46,29 +43,15 @@ public class PluginManager {
     private final LinkedHashMap<String, CordovaPlugin> pluginMap = new LinkedHashMap<String, CordovaPlugin>();
     private final LinkedHashMap<String, PluginEntry> entryMap = new LinkedHashMap<String, PluginEntry>();
 
-    private final CordovaInterfaceImpl ctx;
+    private final CordovaInterface ctx;
     private final CordovaWebView app;
     private boolean isInitialized;
 
     private CordovaPlugin permissionRequester;
 
-    public PluginManager(Activity activity) {
-        CordovaInterfaceImpl cordovaInterfaceImpl = new CordovaInterfaceImpl(activity);
-        CordovaWebView cordovaWebView = new CordovaWebViewImpl(this);
-        ConfigXmlParser configParser = new ConfigXmlParser();
-        configParser.parse(activity);
-        ArrayList<PluginEntry> pluginEntries = configParser.getPluginEntries();
-        CordovaPreferences preferences = configParser.getPreferences();
-        cordovaWebView.init(cordovaInterfaceImpl, pluginEntries, preferences);
-        // this(cordovaWebView, cordovaInterfaceImpl, pluginEntries);
-        this.app = cordovaWebView;
-        this.ctx = cordovaInterfaceImpl;
-        setPluginEntries(pluginEntries);
-    }
-
-    public PluginManager(CordovaWebView cordovaWebView, CordovaInterfaceImpl cordova, Collection<PluginEntry> pluginEntries) {
-        this.app = cordovaWebView;
+    public PluginManager(CordovaWebView cordovaWebView, CordovaInterface cordova, Collection<PluginEntry> pluginEntries) {
         this.ctx = cordova;
+        this.app = cordovaWebView;
         setPluginEntries(pluginEntries);
     }
 
@@ -135,15 +118,15 @@ public class PluginManager {
      * @param rawArgs       An Array literal string containing any arguments needed in the
      *                      plugin execute method.
      */
-    public void exec(final String service, final String action, CallbackContext callbackContext, final String rawArgs) {
+    public void exec(final String service, final String action, final String callbackId, final String rawArgs) {
         CordovaPlugin plugin = getPlugin(service);
         if (plugin == null) {
             LOG.d(TAG, "exec() call to unknown plugin: " + service);
             PluginResult cr = new PluginResult(PluginResult.Status.CLASS_NOT_FOUND_EXCEPTION);
-            callbackContext.sendPluginResult(cr);
+            app.sendPluginResult(cr, callbackId);
             return;
         }
-        // CallbackContext callbackContext = new CallbackContext(callbackId, app);
+        CallbackContext callbackContext = new CallbackContext(callbackId, app);
         try {
             long pluginStartTime = System.currentTimeMillis();
             boolean wasValidAction = plugin.execute(action, rawArgs, callbackContext);
@@ -163,11 +146,6 @@ public class PluginManager {
             LOG.e(TAG, "Uncaught exception from plugin", e);
             callbackContext.error(e.getMessage());
         }
-    }
-
-    public void onActivityResult(int requestCode, int resultCode, Intent intent) {
-        LOG.d(TAG, "Incoming Result. Request code = " + requestCode);
-        ctx.onActivityResult(requestCode, resultCode, intent);
     }
 
     /**
@@ -544,35 +522,5 @@ public class PluginManager {
             }
         }
         return state;
-    }
-
-    private Activity getActivity() {
-        try {
-            Class activityThreadClass = Class.forName("android.app.ActivityThread");
-            Object activityThread = activityThreadClass.getMethod("currentActivityThread").invoke(null);
-            Field activitiesField = activityThreadClass.getDeclaredField("mActivities");
-            activitiesField.setAccessible(true);
-
-            Map<Object, Object> activities = (Map<Object, Object>) activitiesField.get(activityThread);
-            if (activities == null) {
-                return null;
-            }
-
-            for (Object activityRecord : activities.values()) {
-                Class activityRecordClass = activityRecord.getClass();
-                Field pausedField = activityRecordClass.getDeclaredField("paused");
-                pausedField.setAccessible(true);
-                if (!pausedField.getBoolean(activityRecord)) {
-                    Field activityField = activityRecordClass.getDeclaredField("activity");
-                    activityField.setAccessible(true);
-                    Activity activity = (Activity) activityField.get(activityRecord);
-                    return activity;
-                }
-            }
-        } catch (Exception e) {
-
-        }
-
-        return null;
     }
 }

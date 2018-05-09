@@ -20,21 +20,21 @@ package org.apache.cordova;
 
 import org.json.JSONArray;
 
+import org.apache.cordova.CordovaWebView;
 import org.apache.cordova.PluginResult;
-import org.apache.cordova.PluginResultCalllback;
 import org.json.JSONObject;
 
 public class CallbackContext {
     private static final String LOG_TAG = "CordovaPlugin";
 
     private String callbackId;
-    private PluginResultCalllback pluginResultCalllback;
+    private CordovaWebView webView;
     protected boolean finished;
     private int changingThreads;
 
-    public CallbackContext(String callbackId, PluginResultCalllback pluginResultCalllback) {
+    public CallbackContext(String callbackId, CordovaWebView webView) {
         this.callbackId = callbackId;
-        this.pluginResultCalllback = pluginResultCalllback;
+        this.webView = webView;
     }
 
     public boolean isFinished() {
@@ -58,8 +58,8 @@ public class CallbackContext {
                 finished = !pluginResult.getKeepCallback();
             }
         }
-        LOG.w(LOG_TAG, "SEND PLUGIN RESULT");
-        pluginResultCalllback.sendPluginResult(pluginResult, callbackId);
+
+        this.webView.sendPluginResult(pluginResult, callbackId);
     }
 
     /**

@@ -143,7 +143,7 @@ public class CordovaActivity extends Activity {
     }
 
     protected void init() {
-        appView = makeWebView();
+        // appView = makeWebView();
         createViews();
         if (!appView.isInitialized()) {
             appView.init(cordovaInterface, pluginEntries, preferences);
@@ -198,10 +198,10 @@ public class CordovaActivity extends Activity {
      * <p/>
      * Override this to customize the webview that is used.
      */
-    protected CordovaWebView makeWebView() {
-        // TODO:
-        return new CordovaWebViewImpl();
-    }
+    // protected CordovaWebView makeWebView() {
+    //     // TODO:
+    //     return new CordovaWebViewImpl(this);
+    // }
 
     protected CordovaWebViewEngine makeWebViewEngine() {
         return CordovaWebViewImpl.createEngine(this, preferences);
