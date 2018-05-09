@@ -1,35 +1,5 @@
 var application = require("application");
 
-/**
- * Start cordova
- */
-/*global cordova,window,console*/
-/**
- * An Image Picker plugin for Cordova
- *
- * Developed by Wymsee for Sync OnSet
- */
-
-// Platform: android
-// 4450a4cea50616e080a82e8ede9e3d6a1fe3c3ec
-/*
- Licensed to the Apache Software Foundation (ASF) under one
- or more contributor license agreements.  See the NOTICE file
- distributed with this work for additional information
- regarding copyright ownership.  The ASF licenses this file
- to you under the Apache License, Version 2.0 (the
- "License"); you may not use this file except in compliance
- with the License.  You may obtain a copy of the License at
-
-     http://www.apache.org/licenses/LICENSE-2.0
-
- Unless required by applicable law or agreed to in writing,
- software distributed under the License is distributed on an
- "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- KIND, either express or implied.  See the License for the
- specific language governing permissions and limitations
- under the License.
-*/
 ; (function () {
     var PLATFORM_VERSION_BUILD_LABEL = '7.1.0';
     // file: src/scripts/require.js
@@ -469,9 +439,9 @@ var application = require("application");
         // ------------------------------------------------------------------------------
 
         /* This code is based on the performance tests at http://jsperf.com/b64tests
-         * This 12-bit-at-a-time algorithm was the best performing version on all
-         * platforms tested.
-         */
+        * This 12-bit-at-a-time algorithm was the best performing version on all
+        * platforms tested.
+        */
 
         var b64_6bit = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
         var b64_12bit;
@@ -912,15 +882,9 @@ var application = require("application");
         var cordova = require('cordova');
         var utils = require('cordova/utils');
 
-        const pluginMng = new org.apache.cordova.CordovaPluginManager();
-        application.android.on(application.AndroidApplication.activityResultEvent, function (args) {
-            console.log("Event: " + args.eventName + ", Activity: " + args.activity +
-                ", requestCode: " + args.requestCode + ", resultCode: " + args.resultCode + ", Intent: " + args.intent);
-            pluginMng.onActivityResult(args.requestCode, args.resultCode, args.intent)
-        });
-
-        const pluginResultCallback = new org.apache.cordova.PluginResultCalllback({
+        const nativescriptCordovaBridge = new org.apache.cordova.NativescriptCordovaBridge({
             sendPluginResult: (pluginResult, callbackId) => {
+                console.log("Plugin result callback id:", callbackId )
                 try {
                     const callback = cordova.callbacks[callbackId];
                     const args = JSON.parse(pluginResult.getMessage());
@@ -941,6 +905,49 @@ var application = require("application");
             }
         });
 
+        const nativeScriptCordovaInterface = new org.apache.cordova.NativeScriptCordovaInterface(application.android.foregroundActivity, nativescriptCordovaBridge);
+        application.android.on(application.AndroidApplication.activityResultEvent, function (args) {
+            console.log("Event: " + args.eventName + ", Activity: " + args.activity +
+                ", requestCode: " + args.requestCode + ", resultCode: " + args.resultCode + ", Intent: " + args.intent);
+                nativeScriptCordovaInterface.onActivityResult(args.requestCode, args.resultCode, args.intent)
+        });
+
+        application.android.on(application.AndroidApplication.activityDestroyedEvent, function (args) {
+            console.log("Event: " + args.eventName + ", Activity: " + args.activity);
+            nativeScriptCordovaInterface.onDestroy();
+        });
+
+        application.android.on(application.AndroidApplication.activityStartedEvent, function (args) {
+            console.log("Event: " + args.eventName + ", Activity: " + args.activity);
+            nativeScriptCordovaInterface.onStart();
+        });
+
+        application.android.on(application.AndroidApplication.activityPausedEvent, function (args) {
+            console.log("Event: " + args.eventName + ", Activity: " + args.activity);
+            nativeScriptCordovaInterface.onPause();
+        });
+
+        application.android.on(application.AndroidApplication.activityResumedEvent, function (args) {
+            console.log("Event: " + args.eventName + ", Activity: " + args.activity);
+            nativeScriptCordovaInterface.onResume();
+        });
+
+        application.android.on(application.AndroidApplication.activityStoppedEvent, function (args) {
+            console.log("Event: " + args.eventName + ", Activity: " + args.activity);
+            nativeScriptCordovaInterface.onStop();
+        });
+
+        application.android.on(application.AndroidApplication.saveActivityStateEvent, function (args) {
+            console.log("Event: " + args.eventName + ", Activity: " + args.activity + ", Bundle: " + args.bundle);
+            nativeScriptCordovaInterface.onSaveInstanceState(args.bundle);
+        });
+
+        application.android.on("activityRequestPermissions", function (args) {
+            console.log("Event: " + args.eventName + ", requestCode: " + args.requestCode +
+            ", Permissions: " + args.permissions+ ", GrantResults: " + args.grantResults);
+            nativeScriptCordovaInterface.onRequestPermissionsResult(args.requestCode, args.permissions, args.grantResults);
+        });
+
         function androidExec(success, fail, service, action, args) {
             debugger;
             args = args || [];
@@ -957,8 +964,7 @@ var application = require("application");
                 cordova.callbacks[callbackId] = { success: success, fail: fail };
             }
 
-            const callbackContext = new org.apache.cordova.CallbackContext(callbackId, pluginResultCallback)
-            pluginMng.exec(service, action, new org.json.JSONArray(argsJson), callbackContext)
+            nativeScriptCordovaInterface.exec(service, action, callbackId, argsJson)
         }
 
         // androidExec.init = function () {
@@ -2162,11 +2168,11 @@ var application = require("application");
 
     global.cordova = require('cordova');
     // file: src/scripts/bootstrap.js
-
+    console.log(cordova)
     require('cordova/init');
     require('cordova/init_b');
 })();
 
 /**
- * End cordova
- */
+* End cordova
+*/
