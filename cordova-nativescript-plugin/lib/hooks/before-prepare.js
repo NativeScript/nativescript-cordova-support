@@ -21,6 +21,7 @@ const CORDOVA_SUBPROJECT_DEPENDENCIES_END_STRING = "// SUB-PROJECT DEPENDENCIES 
 const PLUGIN_GRADLE_EXTENSIONS_START_STRING = "// PLUGIN GRADLE EXTENSIONS START";
 const PLUGIN_GRADLE_EXTENSIONS_END_STRING = "// PLUGIN GRADLE EXTENSIONS END";
 const CORDOVA_PROJECT_NAME = "myProject";
+const CORDOVA_PROJECT_INFO_PLIST_RELATIVE_PATH = "HelloCordova/HelloCordova-Info.plist";
 
 module.exports = function ($projectData, hookArgs) {
     const platform = hookArgs.platform.toLowerCase();
@@ -60,13 +61,18 @@ module.exports = function ($projectData, hookArgs) {
 
     // Add all plugins from the original project
     pluginDataObjects.forEach(pluginData => {
-        childProcess.spawnSync(NODE_NAME, [cordovaPath, "plugin", "add", pluginData.absolutePath], { cwd: cordovaProjectDir });
+        let varsArgs = [];
+        if (pluginData.pluginVars) {
+            Object.keys(pluginData.pluginVars).forEach(key => {
+                const value = pluginData.pluginVars[key];
+                varsArgs.push("--variable");
+                varsArgs.push(`${key}="${value}"`);
+            });
+        }
+        childProcess.spawnSync(NODE_NAME, [cordovaPath, "plugin", "add", pluginData.absolutePath].concat(varsArgs), { cwd: cordovaProjectDir });
     });
 
     childProcess.spawnSync(NODE_NAME, [cordovaPath, "prepare", platform], { cwd: cordovaProjectDir });
-
-// TODO: plugin params
-// TODO: Info Plist modifications
 
     processCordovaProject(cordovaProjectDir, platform, pluginDataObjects, idStringComponent, platformDirectory);
 
@@ -91,6 +97,7 @@ function getPluginDataObjects(projectDir) {
     const modulesFolder = path.join(projectDir, "node_modules");
     const isCordovaPlugin = source => fs.lstatSync(source).isDirectory() && path.basename(source) !== PLUGIN_NAME && fs.existsSync(getPluginXml(source));
     const cordovaPluginsDirectories = fs.readdirSync(modulesFolder).map(moduleName => path.join(modulesFolder, moduleName)).filter(isCordovaPlugin);
+    const mainPackageJson = require(getPackageJson(projectDir));
 
     const pluginDataObjects = cordovaPluginsDirectories.map(dir => {
         const pluginXml = fs.readFileSync(getPluginXml(dir), 'utf8');
@@ -98,10 +105,16 @@ function getPluginDataObjects(projectDir) {
         const result = convert.xml2js(pluginXml, options);
         const plugin = result.elements[0];
         const pluginId = plugin.attributes.id;
+        const pluginName = path.basename(dir);
+        const pluginVars = mainPackageJson.nativescript &&
+                mainPackageJson.nativescript.cordova &&
+                mainPackageJson.nativescript.cordova["plugin-variables"] &&
+                mainPackageJson.nativescript.cordova["plugin-variables"][pluginName];
 
         return {
             absolutePath: dir,
-            pluginName: path.basename(dir),
+            pluginName,
+            pluginVars,
             version: require(getPackageJson(dir)).version,
             id: pluginId
         };
@@ -149,6 +162,14 @@ function prepareForAddingCordovaPlugins(platform, pluginPackageName, platformDir
 </manifest>
 `);
     } else if (platform === "ios"){
+        const infoPlistContents =
+`<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+  <dict>
+  </dict>
+</plist>`; //Truncate Info.plist in order to track plugin keys and add only them
+        fs.writeFileSync(path.join(platformDirectory, CORDOVA_PROJECT_INFO_PLIST_RELATIVE_PATH), infoPlistContents);
     }
 }
 
@@ -201,6 +222,7 @@ function processCordovaProject(cordovaProjectDir, platform, pluginDataObjects, i
             { src: path.join(platformDirectory, "www", PLUGINS_DIR_NAME), dest: iosPluginsJsDir },
             { src: path.join(platformDirectory, "HelloCordova", "Plugins"), dest: path.join(nsCordovaPlatformSrcDir, "Plugins") },
             { src: path.join(platformDirectory, "HelloCordova", "config.xml"), dest: addPlatformSuffixBeforeExtension(path.join(nsCordovaPluginDir, "config.xml"), platform) },
+            { src: path.join(platformDirectory, CORDOVA_PROJECT_INFO_PLIST_RELATIVE_PATH), dest: path.join(nsCordovaPlatformDir, "Info.plist") },
         ];
 
         filesToCopy.forEach(item => {
