@@ -6,7 +6,6 @@ const fse = require('fs-extra')
 const temp = require("temp");
 const childProcess = require("child_process");
 
-const CORDOVA_PLUGINS_FILE = "cordova_plugins.js";
 const CORDOVA_FEATURES_FILE = "cordova_features.json";
 const PLUGIN_NAME = "cordova-nativescript-plugin"
 const ANDROID_MANIFEST_FILE_NAME = "AndroidManifest.xml";
@@ -21,13 +20,14 @@ const CORDOVA_SUBPROJECT_DEPENDENCIES_START_STRING = "// SUB-PROJECT DEPENDENCIE
 const CORDOVA_SUBPROJECT_DEPENDENCIES_END_STRING = "// SUB-PROJECT DEPENDENCIES END";
 const PLUGIN_GRADLE_EXTENSIONS_START_STRING = "// PLUGIN GRADLE EXTENSIONS START";
 const PLUGIN_GRADLE_EXTENSIONS_END_STRING = "// PLUGIN GRADLE EXTENSIONS END";
+const CORDOVA_PROJECT_NAME = "myProject";
 
 module.exports = function ($projectData, hookArgs) {
     const platform = hookArgs.platform.toLowerCase();
     const projectDir = $projectData.projectDir;
-    const pluginVersionsCacheLocation = path.join(projectDir, PLATFORMS_STRING, CORDOVA_NAME, platform);
+    const pluginVersionsCacheLocation = path.join(getNsCordovaPluginDir(), PLATFORMS_STRING);
     mkdirp.sync(pluginVersionsCacheLocation);
-    const pluginVersionsCacheFilePath = path.join(pluginVersionsCacheLocation, "pluginsCache.json");
+    const pluginVersionsCacheFilePath = path.join(pluginVersionsCacheLocation, addPlatformSuffixBeforeExtension("pluginsCache.json", platform));
 
     const getPluginXml = dir => path.join(dir, "plugin.xml")
     const getPackageJson = dir => path.join(dir, PACKAGE_JSON_FILE_NAME)
@@ -41,15 +41,15 @@ module.exports = function ($projectData, hookArgs) {
         console.log("No new cordova plugins to prepare.");
         return;
     }
+
     temp.track();
     const tempCordovaProject = temp.mkdirSync("cordova-project");
     const cordovaPath = path.join(modulesFolder, CORDOVA_NAME, "bin", CORDOVA_NAME);
-    const projectName = "myProject";
-    const cordovaProjectDir = path.join(tempCordovaProject, projectName);
+    const cordovaProjectDir = path.join(tempCordovaProject, CORDOVA_PROJECT_NAME);
     const idStringComponent = "zzz123zzz";
     const pluginPackageName = `${idStringComponent}.${idStringComponent}.${idStringComponent}`;
     // Create the project
-    childProcess.spawnSync(NODE_NAME, [cordovaPath, "create", projectName, "--appid", pluginPackageName], { cwd: tempCordovaProject });
+    childProcess.spawnSync(NODE_NAME, [cordovaPath, "create", CORDOVA_PROJECT_NAME, "--appid", pluginPackageName], { cwd: tempCordovaProject });
 
     // Add the platform
     childProcess.spawnSync(NODE_NAME, [cordovaPath, "platform", "add", platform], { cwd: cordovaProjectDir });
@@ -64,6 +64,9 @@ module.exports = function ($projectData, hookArgs) {
     });
 
     childProcess.spawnSync(NODE_NAME, [cordovaPath, "prepare", platform], { cwd: cordovaProjectDir });
+
+// TODO: plugin params
+// TODO: Info Plist modifications
 
     processCordovaProject(cordovaProjectDir, platform, pluginDataObjects, idStringComponent, platformDirectory);
 
@@ -151,14 +154,13 @@ function prepareForAddingCordovaPlugins(platform, pluginPackageName, platformDir
 
 function processCordovaProject(cordovaProjectDir, platform, pluginDataObjects, idStringComponent, platformDirectory) {
     const android = platform === "android";
-    const nsCordovaPluginRoot = path.join(__dirname, "..", "..");
-    const nsCordovaPlatformsDir = path.join(nsCordovaPluginRoot, "platforms", platform);
+    const nsCordovaPlatformDir = path.join(getNsCordovaPluginDir(), "platforms", platform);
 
     if (android) {
         const mainDirectory = getAndroidMainDir(platformDirectory);
         fs.readdirSync(mainDirectory).forEach(mainDirFile => {
             const fullSrcPath = path.join(mainDirectory, mainDirFile);
-            const fullDestPath = path.join(nsCordovaPlatformsDir, mainDirFile);
+            const fullDestPath = path.join(nsCordovaPlatformDir, mainDirFile);
             switch (mainDirFile) {
                 case "assets":
                     const cordovaPluginsDestPath = path.join(nsCordovaPluginRoot, CORDOVA_PLUGINS_FILE_NAME);
@@ -189,24 +191,45 @@ function processCordovaProject(cordovaProjectDir, platform, pluginDataObjects, i
             }
         });
 
-        handleGradleFiles(pluginDataObjects, platformDirectory, nsCordovaPlatformsDir);
+        handleGradleFiles(pluginDataObjects, platformDirectory, nsCordovaPlatformDir);
     } else {
-        fs.readdirSync(platformDirectory).forEach(mainDirFile => {
-            const fullSrcPath = path.join(mainDirectory, mainDirFile);
-            const fullDestPath = path.join(nsCordovaPlatformsDir, mainDirFile);
+        const nsCordovaPluginDir = getNsCordovaPluginDir();
+        const nsCordovaPlatformSrcDir = path.join(nsCordovaPlatformDir, "src");
+        const iosPluginsJsDir = path.join(nsCordovaPluginDir, PLUGINS_DIR_NAME);
+        const filesToCopy = [
+            { src: path.join(platformDirectory, "www", CORDOVA_PLUGINS_FILE_NAME), dest: path.join(nsCordovaPluginDir, addPlatformSuffixBeforeExtension(CORDOVA_PLUGINS_FILE_NAME, platform)) },
+            { src: path.join(platformDirectory, "www", PLUGINS_DIR_NAME), dest: iosPluginsJsDir },
+            { src: path.join(platformDirectory, "HelloCordova", "Plugins"), dest: path.join(nsCordovaPlatformSrcDir, "Plugins") },
+            { src: path.join(platformDirectory, "HelloCordova", "config.xml"), dest: addPlatformSuffixBeforeExtension(path.join(nsCordovaPluginDir, "config.xml"), platform) },
+        ];
 
-            switch (mainDirFile) {
+        filesToCopy.forEach(item => {
+            fse.copySync(item.src, item.dest);
+        });
 
+        addPlatformSuffixToAllFiles(iosPluginsJsDir, platform);
+
+        let frameworks = require(path.join(platformDirectory, "frameworks.json"));
+
+        let xcconfigContents = "OTHER_LDFLAGS = $(inherited)";
+        Object.keys(frameworks).forEach((framework) => {
+            const endsOnFrameworkRegEx = /.framework$/;
+            if (framework.match(endsOnFrameworkRegEx)) {
+                xcconfigContents += ` -framework "${framework.replace(endsOnFrameworkRegEx, "")}"`;
             }
         });
+        xcconfigContents += `\n`;
+        xcconfigContents += `SYSTEM_HEADER_SEARCH_PATHS = $(inherited) ${path.join(nsCordovaPlatformDir, "src/Cordova")}\n`;
+
+        fs.writeFileSync(path.join(nsCordovaPlatformDir, "build.xcconfig"), xcconfigContents + "\n");
     }
 
 }
 
-function handleGradleFiles(pluginDataObjects, platformDirectory, nsCordovaPlatformsDir) {
+function handleGradleFiles(pluginDataObjects, platformDirectory, nsCordovaPlatformDir) {
 
     // Handle gradle-specifics
-    const destIncludeGradle = path.join(nsCordovaPlatformsDir, "include.gradle");
+    const destIncludeGradle = path.join(nsCordovaPlatformDir, "include.gradle");
     const cdvBuildGradleFilePath = path.join(platformDirectory, APP_DIRECTORY_NAME, "build.gradle");
     const cdvBuildGradleFileContents = fs.readFileSync(cdvBuildGradleFilePath, "utf8");
 
@@ -233,7 +256,7 @@ dependencies {
     pluginDataObjects.forEach(pluginData => {
         const pluginGradleDir = path.join(platformDirectory, pluginData.id);
         if (fs.existsSync(pluginGradleDir)) {
-            fse.copySync(pluginGradleDir, path.join(nsCordovaPlatformsDir, pluginData.id));
+            fse.copySync(pluginGradleDir, path.join(nsCordovaPlatformDir, pluginData.id));
         }
     });
 
@@ -242,7 +265,7 @@ dependencies {
         .split("\n")
         .filter(location => !!location);
     cordovaPluginsGradleFilesLocations.forEach(cordovaPluginsGradleFileLocation => {
-        const fullPath = path.join(nsCordovaPlatformsDir, cordovaPluginsGradleFileLocation);
+        const fullPath = path.join(nsCordovaPlatformDir, cordovaPluginsGradleFileLocation);
         const gradleContents = fs.readFileSync(fullPath, "utf8");
         const unifiedGradleContents = getUnifiedAppCompatSupportContent(gradleContents);
         fs.writeFileSync(fullPath, unifiedGradleContents);
@@ -261,4 +284,22 @@ function getUnifiedAppCompatSupportContent(originalContent) {
 
 function getAndroidMainDir(platformsDirectory) {
     return path.join(platformsDirectory, APP_DIRECTORY_NAME, "src", "main");
+}
+
+function addPlatformSuffixBeforeExtension(filename, platform) {
+    if (!filename || !platform) {
+        throw new Error("Required parameter is missing!");
+    }
+    const extStartIndex = filename.length - path.extname(filename).length;
+    return `${filename.slice(0, extStartIndex)}.${platform}${filename.slice(extStartIndex)}`;
+}
+
+function addPlatformSuffixToAllFiles(dir, platform) {
+    walkSync(dir).forEach(file => {
+        fs.renameSync(file, addPlatformSuffixBeforeExtension(file, platform));
+    })
+}
+
+function getNsCordovaPluginDir() {
+    return path.join(__dirname, "..", "..")
 }
