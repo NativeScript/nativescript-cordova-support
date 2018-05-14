@@ -175,7 +175,8 @@ function prepareForAddingCordovaPlugins(platform, pluginPackageName, platformDir
 
 function processCordovaProject(cordovaProjectDir, platform, pluginDataObjects, idStringComponent, platformDirectory) {
     const android = platform === "android";
-    const nsCordovaPlatformDir = path.join(getNsCordovaPluginDir(), "platforms", platform);
+    const nsCordovaPluginDir = getNsCordovaPluginDir();
+    const nsCordovaPlatformDir = path.join(nsCordovaPluginDir, "platforms", platform);
 
     if (android) {
         const mainDirectory = getAndroidMainDir(platformDirectory);
@@ -184,7 +185,7 @@ function processCordovaProject(cordovaProjectDir, platform, pluginDataObjects, i
             const fullDestPath = path.join(nsCordovaPlatformDir, mainDirFile);
             switch (mainDirFile) {
                 case "assets":
-                    const cordovaPluginsDestPath = path.join(nsCordovaPluginRoot, CORDOVA_PLUGINS_FILE_NAME);
+                    const cordovaPluginsDestPath = path.join(nsCordovaPluginDir, CORDOVA_PLUGINS_FILE_NAME);
                     const wwwwDir = path.join(fullSrcPath, "www");
 
                     // Modify cordova_plugins.js file contents so that it complies with {N} require function
@@ -199,7 +200,7 @@ function processCordovaProject(cordovaProjectDir, platform, pluginDataObjects, i
                         let pluginFileContents = fs.readFileSync(pluginFile, "utf8");
                         pluginFileContents = pluginFileContents.replace(/(cordova[.]define[\s\S]*?{)/gm, `$1${getPluginGeneratedCodeSnippet(platform)}`)
                         const relativePluginFileLocation = path.relative(wwwPluginsDir, pluginFile);
-                        const destinationPluginFileFullPath = path.join(nsCordovaPluginRoot, PLUGINS_DIR_NAME, relativePluginFileLocation);
+                        const destinationPluginFileFullPath = path.join(nsCordovaPluginDir, PLUGINS_DIR_NAME, relativePluginFileLocation);
                         mkdirp.sync(path.dirname(destinationPluginFileFullPath));
                         fs.writeFileSync(destinationPluginFileFullPath, pluginFileContents);
                     });
@@ -214,7 +215,6 @@ function processCordovaProject(cordovaProjectDir, platform, pluginDataObjects, i
 
         handleGradleFiles(pluginDataObjects, platformDirectory, nsCordovaPlatformDir);
     } else {
-        const nsCordovaPluginDir = getNsCordovaPluginDir();
         const nsCordovaPlatformSrcDir = path.join(nsCordovaPlatformDir, "src");
         const iosPluginsJsDir = path.join(nsCordovaPluginDir, PLUGINS_DIR_NAME);
         const filesToCopy = [
