@@ -43,7 +43,6 @@ const navigator = {
 
 global.navigator = window.navigator = navigator;
 
-
 (function() {
 var PLATFORM_VERSION_BUILD_LABEL = '4.6.0-dev';
 // file: src/scripts/require.js

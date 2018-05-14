@@ -1,6 +1,30 @@
-var application = require("application");
+const application = require("application");
+const timer = require("timer");
 
-; (function () {
+const NATIVESCRIPT_PLUGIN_NAME = "cordova-nativescript-plugin";
+
+
+global.window = {
+    setTimeout: timer.setTimeout
+};
+global.setTimeout = timer.setTimeout;
+
+const navigator = {
+    appCodeName: "NativeScript",
+    appName: "NativeScript",
+    appVersion: "1.0.0",
+    cookieEnabled: false,
+    geolocation: {},
+    language: "en-US",
+    onLine: true,
+    platform: "android",
+    product: "NativeScript",
+    userAgent: "NativeScript for android"
+};
+
+global.navigator = window.navigator = navigator;
+
+(function () {
     var PLATFORM_VERSION_BUILD_LABEL = '7.1.0';
     // file: src/scripts/require.js
 
@@ -884,7 +908,7 @@ var application = require("application");
 
         const nativescriptCordovaBridge = new org.apache.cordova.NativescriptCordovaBridge({
             sendPluginResult: (pluginResult, callbackId) => {
-                console.log("Plugin result callback id:", callbackId )
+                console.log("Plugin result callback id:", callbackId)
                 try {
                     const callback = cordova.callbacks[callbackId];
                     const args = JSON.parse(pluginResult.getMessage());
@@ -909,7 +933,7 @@ var application = require("application");
         application.android.on(application.AndroidApplication.activityResultEvent, function (args) {
             console.log("Event: " + args.eventName + ", Activity: " + args.activity +
                 ", requestCode: " + args.requestCode + ", resultCode: " + args.resultCode + ", Intent: " + args.intent);
-                nativeScriptCordovaInterface.onActivityResult(args.requestCode, args.resultCode, args.intent)
+            nativeScriptCordovaInterface.onActivityResult(args.requestCode, args.resultCode, args.intent)
         });
 
         application.android.on(application.AndroidApplication.activityDestroyedEvent, function (args) {
@@ -944,12 +968,11 @@ var application = require("application");
 
         application.android.on("activityRequestPermissions", function (args) {
             console.log("Event: " + args.eventName + ", requestCode: " + args.requestCode +
-            ", Permissions: " + args.permissions+ ", GrantResults: " + args.grantResults);
+                ", Permissions: " + args.permissions + ", GrantResults: " + args.grantResults);
             nativeScriptCordovaInterface.onRequestPermissionsResult(args.requestCode, args.permissions, args.grantResults);
         });
 
         function androidExec(success, fail, service, action, args) {
-            debugger;
             args = args || [];
             // Process any ArrayBuffers in the args into a string.
             for (var i = 0; i < args.length; i++) {
@@ -1274,6 +1297,21 @@ var application = require("application");
         setTimeout(function () {
             pluginloader.load(function () {
                 channel.onPluginsReady.fire();
+
+                // Create all cordova objects once native side is ready.
+                modulemapper.mapModules(window);
+
+                platform.initialize && platform.initialize();
+
+                // Fire event to notify that all objects are created
+                channel.onCordovaReady.fire();
+
+                // Fire onDeviceReady event once page has fully loaded, all
+                // constructors have run and cordova info has been received from native
+                // side.
+                channel.join(function () {
+                    require('cordova').fireDocumentEvent('deviceready');
+                }, channel.deviceReadyChannelsArray);
             });
         }, 0);
 
@@ -1301,7 +1339,6 @@ var application = require("application");
 
     // file: src/common/init_b.js
     define("cordova/init_b", function (require, exports, module) {
-
         var channel = require('cordova/channel');
         var cordova = require('cordova');
         var modulemapper = require('cordova/modulemapper');
@@ -1830,10 +1867,14 @@ var application = require("application");
         // Helper function to inject a <script> tag.
         // Exported for testing.
         exports.injectScript = function (url, onload, onerror) {
-            // TODO: fix the cordova-plugin.js path
-            global.require(url)
-            onload()
-
+            console.log(`pluginloader.injectScript(${url}...) called`);
+            try {
+                global.require(url);
+                onload();
+            } catch (err) {
+                console.log(`error injectScript ${url}: ${err}`);
+                onerror(err);
+            }
 
             // var script = document.createElement('script');
             // // onload fires even when script fails loads with an error.
@@ -1907,7 +1948,7 @@ var application = require("application");
         }
 
         function findCordovaPath() {
-            return "";
+            return `${NATIVESCRIPT_PLUGIN_NAME}/`;
             // var path = null;
             // var scripts = document.getElementsByTagName('script');
             // var term = '/cordova.js';
@@ -1930,7 +1971,7 @@ var application = require("application");
                 console.log('Could not find cordova.js script tag. Plugin loading may fail.');
                 pathPrefix = '';
             }
-            injectIfNecessary('cordova/plugin_list', 'cordova-nativescript-plugin/cordova_plugins.js', function () {
+            injectIfNecessary('cordova/plugin_list', pathPrefix + 'cordova_plugins.js', function () {
                 var moduleList = require('cordova/plugin_list');
                 handlePluginsObject(pathPrefix, moduleList, callback);
             }, callback);
@@ -2168,7 +2209,6 @@ var application = require("application");
 
     global.cordova = require('cordova');
     // file: src/scripts/bootstrap.js
-    console.log(cordova)
     require('cordova/init');
     require('cordova/init_b');
 })();

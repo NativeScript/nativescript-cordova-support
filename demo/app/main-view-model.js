@@ -61,12 +61,7 @@ function createViewModel(args) {
             console.log('Error: ' + error);
         }
 
-        // Require the imagePicker plugin
-        const imagePicker = platformModule.isAndroid
-            ? cordova.require("com.synconset.imagepicker.ImagePicker").imagePicker
-            : window.imagePicker;
-
-        imagePicker.getPictures(success, fail);
+        window.imagePicker.getPictures(success, fail);
     }
 
     return viewModel;

@@ -123,27 +123,6 @@ function getPluginDataObjects(projectDir) {
     return pluginDataObjects;
 }
 
-function getPluginGeneratedCodeSnippet(platform) {
-    return `
-// GENERATED CODE
-const window = module.exports;
-const navigator = {
-    appCodeName: "NativeScript",
-    appName: "NativeScript",
-    appVersion: "1.0.0",
-    cookieEnabled: false,
-    geolocation: {},
-    language: "en-US",
-    onLine: true,
-    platform: "${platform}",
-    product: "NativeScript",
-    userAgent: "NativeScript for ${platform}"
-};
-window.navigator = navigator;
-// ~GENERATED CODE
-`;
-}
-
 function prepareForAddingCordovaPlugins(platform, pluginPackageName, platformDirectory) {
     if (platform === "android") {
         const mainDirectory = getAndroidMainDir(platformDirectory);
@@ -187,22 +166,14 @@ function processCordovaProject(cordovaProjectDir, platform, pluginDataObjects, i
                 case "assets":
                     const cordovaPluginsDestPath = path.join(nsCordovaPluginDir, CORDOVA_PLUGINS_FILE_NAME);
                     const wwwwDir = path.join(fullSrcPath, "www");
-
-                    // Modify cordova_plugins.js file contents so that it complies with {N} require function
-                    let cordovaPluginsFileWWWContents = fs.readFileSync(path.join(wwwwDir, CORDOVA_PLUGINS_FILE_NAME), 'utf8');
-                    cordovaPluginsFileWWWContents = cordovaPluginsFileWWWContents.replace(/"file": "plugins/g, `"file": "${PLUGIN_NAME}/${PLUGINS_DIR_NAME}`);
-                    fs.writeFileSync(cordovaPluginsDestPath, cordovaPluginsFileWWWContents);
-
-                    // We need to modify each plugin's javascript in order to add window and other relative objects
+                    fse.copySync(path.join(wwwwDir, CORDOVA_PLUGINS_FILE_NAME), cordovaPluginsDestPath);
                     const wwwPluginsDir = path.join(wwwwDir, PLUGINS_DIR_NAME);
                     const wwwJsFiles = walkSync(wwwPluginsDir);
                     wwwJsFiles.forEach(pluginFile => {
-                        let pluginFileContents = fs.readFileSync(pluginFile, "utf8");
-                        pluginFileContents = pluginFileContents.replace(/(cordova[.]define[\s\S]*?{)/gm, `$1${getPluginGeneratedCodeSnippet(platform)}`)
                         const relativePluginFileLocation = path.relative(wwwPluginsDir, pluginFile);
                         const destinationPluginFileFullPath = path.join(nsCordovaPluginDir, PLUGINS_DIR_NAME, relativePluginFileLocation);
                         mkdirp.sync(path.dirname(destinationPluginFileFullPath));
-                        fs.writeFileSync(destinationPluginFileFullPath, pluginFileContents);
+                        fse.copySync(pluginFile, destinationPluginFileFullPath);
                     });
                     break;
                 case "java":
