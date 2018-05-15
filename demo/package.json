@@ -7,6 +7,19 @@
     "id": "org.nativescript.cdvNativeTest",
     "tns-android": {
       "version": "4.0.0"
+    },
+    "tns-ios": {
+      "version": "4.0.1"
+    },
+    "cordova": {
+      "plugin-variables": {
+        "cordova-plugin-telerik-imagepicker": {
+          "PHOTO_LIBRARY_USAGE_DESCRIPTION": "Pick images from gallery"
+        },
+        "phonegap-plugin-barcodescanner": {
+          "CAMERA_USAGE_DESCRIPTION": "Scan barcodes"
+        }
+      }
     }
   },
   "dependencies": {

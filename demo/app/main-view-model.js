@@ -1,6 +1,6 @@
 var Observable = require("data/observable").Observable;
 var application = require("application");
-
+const platformModule = require("tns-core-modules/platform");
 // This enables the cordova variable
 // require("cordova-nativescript-plugin");
 
@@ -61,9 +61,7 @@ function createViewModel(args) {
             console.log('Error: ' + error);
         }
 
-        // Require the imagePicker plugin
-        const imagePicker = cordova.require("com.synconset.imagepicker.ImagePicker").imagePicker;
-        imagePicker.getPictures(success, fail);
+        window.imagePicker.getPictures(success, fail);
     }
 
     return viewModel;
