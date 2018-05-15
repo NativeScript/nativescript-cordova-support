@@ -21,7 +21,9 @@ const CORDOVA_SUBPROJECT_DEPENDENCIES_END_STRING = "// SUB-PROJECT DEPENDENCIES 
 const PLUGIN_GRADLE_EXTENSIONS_START_STRING = "// PLUGIN GRADLE EXTENSIONS START";
 const PLUGIN_GRADLE_EXTENSIONS_END_STRING = "// PLUGIN GRADLE EXTENSIONS END";
 const CORDOVA_PROJECT_NAME = "myProject";
-const CORDOVA_PROJECT_INFO_PLIST_RELATIVE_PATH = "HelloCordova/HelloCordova-Info.plist";
+const NATIVE_CORDOVA_IOS_PROJECT_NAME = "HelloCordova";
+const CORDOVA_PROJECT_INFO_PLIST_RELATIVE_PATH = `${NATIVE_CORDOVA_IOS_PROJECT_NAME}/${NATIVE_CORDOVA_IOS_PROJECT_NAME}-Info.plist`;
+const IOS_RESOURCES_DIR_NAME = "Resources";
 
 module.exports = function ($projectData, hookArgs) {
     const platform = hookArgs.platform.toLowerCase();
@@ -49,11 +51,13 @@ module.exports = function ($projectData, hookArgs) {
     const cordovaProjectDir = path.join(tempCordovaProject, CORDOVA_PROJECT_NAME);
     const idStringComponent = "zzz123zzz";
     const pluginPackageName = `${idStringComponent}.${idStringComponent}.${idStringComponent}`;
+
     // Create the project
-    childProcess.spawnSync(NODE_NAME, [cordovaPath, "create", CORDOVA_PROJECT_NAME, "--appid", pluginPackageName], { cwd: tempCordovaProject });
+    console.log(`Creating temporary Cordova project in ${cordovaProjectDir}...`);
+    spawnSync(NODE_NAME, [cordovaPath, "create", CORDOVA_PROJECT_NAME, "--appid", pluginPackageName], { cwd: tempCordovaProject });
 
     // Add the platform
-    childProcess.spawnSync(NODE_NAME, [cordovaPath, "platform", "add", platform], { cwd: cordovaProjectDir });
+    spawnSync(NODE_NAME, [cordovaPath, "platform", "add", platform], { cwd: cordovaProjectDir });
 
     const platformDirectory = path.join(cordovaProjectDir, PLATFORMS_STRING, platform);
 
@@ -62,6 +66,7 @@ module.exports = function ($projectData, hookArgs) {
     const tempPluginsFolder = path.join(tempCordovaProject, "cordova-plugins");
     mkdirp.sync(tempPluginsFolder);
     // Add all plugins from the original project
+    console.log(`Adding plugins ${pluginDataObjects.map(x => x.id)}...`);
     pluginDataObjects.forEach(pluginData => {
         const pluginFolderName = path.basename(pluginData.absolutePath);
         const pluginDest = path.join(tempPluginsFolder, pluginFolderName);
@@ -78,11 +83,13 @@ module.exports = function ($projectData, hookArgs) {
             });
         }
 
-        childProcess.spawnSync(NODE_NAME, [cordovaPath, "plugin", "add", pluginDest].concat(varsArgs), { cwd: cordovaProjectDir });
+        spawnSync(NODE_NAME, [cordovaPath, "plugin", "add", pluginDest].concat(varsArgs), { cwd: cordovaProjectDir });
     });
 
-    childProcess.spawnSync(NODE_NAME, [cordovaPath, "prepare", platform], { cwd: cordovaProjectDir });
+    console.log(`Running 'cordova prepare ${platform}'...`);
+    spawnSync(NODE_NAME, [cordovaPath, "prepare", platform], { cwd: cordovaProjectDir });
 
+    console.log(`Extracting plugin files from temporary Cordova project...`);
     processCordovaProject(cordovaProjectDir, platform, pluginDataObjects, idStringComponent, platformDirectory);
 
     // TODO: This should probably happen on after-prepare
@@ -163,16 +170,23 @@ function prepareForAddingCordovaPlugins(platform, pluginPackageName, platformDir
 
 </manifest>
 `);
-    } else if (platform === "ios") {
+    } else if (platform === "ios"){
+
+        //Truncate Info.plist in order to track plugin keys and add only them
         const infoPlistContents =
             `<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
   <dict>
   </dict>
-</plist>`; //Truncate Info.plist in order to track plugin keys and add only them
+</plist>`;
         fs.writeFileSync(path.join(platformDirectory, CORDOVA_PROJECT_INFO_PLIST_RELATIVE_PATH), infoPlistContents);
-    }
+
+        // Wipe Resources directory to copy only plugin resources
+        const resourcesDir = path.join(platformDirectory, NATIVE_CORDOVA_IOS_PROJECT_NAME, IOS_RESOURCES_DIR_NAME);
+        fse.removeSync(resourcesDir);
+        mkdirp.sync(resourcesDir)
+    } // if (platform === "ios")
 }
 
 function processCordovaProject(cordovaProjectDir, platform, pluginDataObjects, idStringComponent, platformDirectory) {
@@ -210,13 +224,15 @@ function processCordovaProject(cordovaProjectDir, platform, pluginDataObjects, i
         handleGradleFiles(pluginDataObjects, platformDirectory, nsCordovaPlatformDir);
     } else {
         const nsCordovaPlatformSrcDir = path.join(nsCordovaPlatformDir, "src");
+        const nsCordovaPlatformResDir = path.join(nsCordovaPlatformDir, IOS_RESOURCES_DIR_NAME);
         const iosPluginsJsDir = path.join(nsCordovaPluginDir, PLUGINS_DIR_NAME);
         const filesToCopy = [
             { src: path.join(platformDirectory, "www", CORDOVA_PLUGINS_FILE_NAME), dest: path.join(nsCordovaPluginDir, addPlatformSuffixBeforeExtension(CORDOVA_PLUGINS_FILE_NAME, platform)) },
             { src: path.join(platformDirectory, "www", PLUGINS_DIR_NAME), dest: iosPluginsJsDir },
-            { src: path.join(platformDirectory, "HelloCordova", "Plugins"), dest: path.join(nsCordovaPlatformSrcDir, "Plugins") },
-            { src: path.join(platformDirectory, "HelloCordova", "config.xml"), dest: addPlatformSuffixBeforeExtension(path.join(nsCordovaPluginDir, "config.xml"), platform) },
+            { src: path.join(platformDirectory, NATIVE_CORDOVA_IOS_PROJECT_NAME, "Plugins"), dest: path.join(nsCordovaPlatformSrcDir, "Plugins") },
+            { src: path.join(platformDirectory, NATIVE_CORDOVA_IOS_PROJECT_NAME, "config.xml"), dest: addPlatformSuffixBeforeExtension(path.join(nsCordovaPluginDir, "config.xml"), platform) },
             { src: path.join(platformDirectory, CORDOVA_PROJECT_INFO_PLIST_RELATIVE_PATH), dest: path.join(nsCordovaPlatformDir, "Info.plist") },
+            { src: path.join(platformDirectory, NATIVE_CORDOVA_IOS_PROJECT_NAME, IOS_RESOURCES_DIR_NAME), dest: nsCordovaPlatformResDir },
         ];
 
         filesToCopy.forEach(item => {
@@ -225,9 +241,17 @@ function processCordovaProject(cordovaProjectDir, platform, pluginDataObjects, i
 
         addPlatformSuffixToAllFiles(iosPluginsJsDir, platform);
 
-        let frameworks = require(path.join(platformDirectory, "frameworks.json"));
+        // These frameworks are required by cordova-ios by default (Copied from cordova-ios - pluginHandlers.js)
+        const cordova_ios_keep_these_frameworks = {
+            'MobileCoreServices.framework': 1,
+            'CoreGraphics.framework': 1,
+            'AssetsLibrary.framework': 1,
+        };
+        const frameworks = Object.assign(
+                cordova_ios_keep_these_frameworks,
+                require(path.join(platformDirectory, "frameworks.json")));
 
-        let xcconfigContents = "OTHER_LDFLAGS = $(inherited)";
+        let xcconfigContents = "OTHER_LDFLAGS = $(inherited) $(ADDITIONAL_CORDOVA_LDFLAGS)";
         Object.keys(frameworks).forEach((framework) => {
             const endsOnFrameworkRegEx = /.framework$/;
             if (framework.match(endsOnFrameworkRegEx)) {
@@ -318,4 +342,17 @@ function addPlatformSuffixToAllFiles(dir, platform) {
 
 function getNsCordovaPluginDir() {
     return path.join(__dirname, "..", "..")
+}
+
+function spawnSync(executable, args, opts) {
+    var res = childProcess.spawnSync(executable, args, opts);
+
+    if (res.status !== 0) {
+        throw new Error(`Execution of command '${executable} ${args.join(' ')}' failed.\n
+stdout:\n
+${res.stdout}\n
+\n
+stderr:\n
+${res.stderr}`);
+    }
 }
