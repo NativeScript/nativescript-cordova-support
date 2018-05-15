@@ -24,10 +24,22 @@ https://docs.nativescript.org/ui/components.
     core theme, such as p-20, btn, h2, and text-center. You can view a full list of the
     class names available for styling your app at https://docs.nativescript.org/ui/theme.
     -->
-    <StackLayout class="p-20">
-        <Label text="Tap the button" class="h1 text-center"/>
-        <Button text="TAP" tap="{{ onTap }}" class="btn btn-primary btn-active"/>
-        <Label text="{{ message }}" class="h2 text-center" textWrap="true"/>
-         <Image id="img" />
-    </StackLayout>
+    <ScrollView>
+      <StackLayout class="p-20">
+          <Label text="Tap the button" class="h1 text-center"/>
+          <Button text="TAP" tap="{{ onTap }}" class="btn btn-primary btn-active"/>
+          <Image id="img" />
+
+          <Button text="Send email" tap="{{ onEmail }}" class="btn btn-primary btn-active"/>
+          <Label text="Enter picture source (PHOTOLIBRARY:0,CAMERA:1,SAVEDPHOTOALBUM:2): " class="h3 text-center" textWrap="true" />
+          <TextField hint="0, 1, 2" text="{{ sourceType }}" secure="false"/>
+          <Label text="Enter picture target encoding(JPEG:0,PNG:1): " class="h3 text-center" textWrap="true" />
+          <TextField hint="0, 1" text="{{ encodingType }}" secure="false"/>
+          <Button text="Get picture" tap="{{ onGetCameraPicture }}" class="btn btn-primary btn-active"/>
+          <Label text="{{ message }}" class="h2 text-center" textWrap="true"/>
+          <Button text="Share pic" tap="{{ onShare }}" class="btn btn-primary btn-active"/>
+          <Button text="Scan code" tap="{{ onScan }}" class="btn btn-primary btn-active"/>
+
+      </StackLayout>
+    </ScrollView>
 </Page>

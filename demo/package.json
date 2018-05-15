@@ -24,9 +24,12 @@
   },
   "dependencies": {
     "cordova-nativescript-plugin": "file:..\\cordova-nativescript-plugin",
+    "cordova-plugin-camera": "^4.0.3",
+    "cordova-plugin-email-composer": "^0.8.15",
     "cordova-plugin-telerik-imagepicker": "2.1.10",
+    "cordova-plugin-x-socialsharing": "^5.4.0",
     "nativescript-theme-core": "~1.0.4",
-    "phonegap-plugin-barcodescanner": "git+https://github.com/Telerik-Verified-Plugins/BarcodeScanner.git",
+    "phonegap-plugin-barcodescanner": "^7.1.2",
     "tns-core-modules": "~4.0.0"
   },
   "devDependencies": {
