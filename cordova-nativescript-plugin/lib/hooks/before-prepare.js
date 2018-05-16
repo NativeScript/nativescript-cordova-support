@@ -57,10 +57,18 @@ module.exports = function ($projectData, hookArgs) {
 
     const platformDirectory = path.join(cordovaProjectDir, PLATFORMS_STRING, platform);
 
-    prepareForAddingCordovaPlugins(platform, pluginPackageName, platformDirectory)
+    prepareForAddingCordovaPlugins(platform, pluginPackageName, platformDirectory);
 
+    const tempPluginsFolder = path.join(tempCordovaProject, "cordova-plugins");
+    mkdirp.sync(tempPluginsFolder);
     // Add all plugins from the original project
     pluginDataObjects.forEach(pluginData => {
+        const pluginFolderName = path.basename(pluginData.absolutePath);
+        const pluginDest = path.join(tempPluginsFolder, pluginFolderName);
+        // The plugins should be copied to the temp project and then we need to remove the
+        // metadata from the package.json or npm will fetch them from the cache.
+        fetchPlugin(pluginData, pluginDest);
+
         let varsArgs = [];
         if (pluginData.pluginVars) {
             Object.keys(pluginData.pluginVars).forEach(key => {
@@ -69,7 +77,8 @@ module.exports = function ($projectData, hookArgs) {
                 varsArgs.push(`${key}="${value}"`);
             });
         }
-        childProcess.spawnSync(NODE_NAME, [cordovaPath, "plugin", "add", pluginData.absolutePath].concat(varsArgs), { cwd: cordovaProjectDir });
+
+        childProcess.spawnSync(NODE_NAME, [cordovaPath, "plugin", "add", pluginDest].concat(varsArgs), { cwd: cordovaProjectDir });
     });
 
     childProcess.spawnSync(NODE_NAME, [cordovaPath, "prepare", platform], { cwd: cordovaProjectDir });
@@ -78,6 +87,20 @@ module.exports = function ($projectData, hookArgs) {
 
     // TODO: This should probably happen on after-prepare
     fs.writeFileSync(pluginVersionsCacheFilePath, JSON.stringify(pluginDataObjects));
+}
+
+function fetchPlugin(pluginData, pluginDest) {
+    fse.copySync(pluginData.absolutePath, pluginDest);
+    const pluginPackageJson = path.join(pluginDest, "package.json");
+    const pkgJsonContent = fs.readFileSync(pluginPackageJson);
+    const pkgJson = JSON.parse(pkgJsonContent);
+    for (let key in pkgJson) {
+        if (pkgJson.hasOwnProperty(key) && key.startsWith("_")) {
+            delete pkgJson[key];
+        }
+    }
+
+    fs.writeFileSync(pluginPackageJson, JSON.stringify(pkgJson));
 }
 
 function walkSync(dir, filelist = []) {
@@ -107,9 +130,9 @@ function getPluginDataObjects(projectDir) {
         const pluginId = plugin.attributes.id;
         const pluginName = path.basename(dir);
         const pluginVars = mainPackageJson.nativescript &&
-                mainPackageJson.nativescript.cordova &&
-                mainPackageJson.nativescript.cordova["plugin-variables"] &&
-                mainPackageJson.nativescript.cordova["plugin-variables"][pluginName];
+            mainPackageJson.nativescript.cordova &&
+            mainPackageJson.nativescript.cordova["plugin-variables"] &&
+            mainPackageJson.nativescript.cordova["plugin-variables"][pluginName];
 
         return {
             absolutePath: dir,
@@ -140,9 +163,9 @@ function prepareForAddingCordovaPlugins(platform, pluginPackageName, platformDir
 
 </manifest>
 `);
-    } else if (platform === "ios"){
+    } else if (platform === "ios") {
         const infoPlistContents =
-`<?xml version="1.0" encoding="UTF-8"?>
+            `<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
   <dict>
