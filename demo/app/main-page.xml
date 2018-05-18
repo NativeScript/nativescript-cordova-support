@@ -26,8 +26,8 @@ https://docs.nativescript.org/ui/components.
     -->
     <ScrollView>
       <StackLayout class="p-20">
-          <Label text="Tap the button" class="h1 text-center"/>
-          <Button text="TAP" tap="{{ onTap }}" class="btn btn-primary btn-active"/>
+          <Button text="Image picker" tap="{{ onTap }}" class="btn btn-primary btn-active"/>
+
           <Image id="img" />
 
           <Button text="Send email" tap="{{ onEmail }}" class="btn btn-primary btn-active"/>
