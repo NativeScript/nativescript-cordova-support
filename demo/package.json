@@ -29,7 +29,7 @@
     "cordova-plugin-telerik-imagepicker": "2.1.10",
     "cordova-plugin-x-socialsharing": "^5.4.0",
     "nativescript-theme-core": "~1.0.4",
-    "phonegap-plugin-barcodescanner": "^7.1.2",
+    "phonegap-plugin-barcodescanner": "https://github.com/mbektchiev/phonegap-plugin-barcodescanner/archive/7.1.2-fixed.tar.gz",
     "tns-core-modules": "~4.0.0"
   },
   "devDependencies": {
