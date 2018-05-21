@@ -117,8 +117,18 @@ function createViewModel(args) {
                 disableAnimations : false, // iOS
                 disableSuccessBeep : true // iOS and Android
             });
-    }
+    };
 
+    viewModel.set("sqliteTestResult", `SQLite plugin test hasn't been run yet`);
+    viewModel.onSqliteTest = function() {
+        global.sqlitePlugin.selfTest((r) => {
+            viewModel.set("sqliteTestResult", `SQLite plugin test PASSED, result: ${r}`);
+        },
+        (err) => {
+            viewModel.set("sqliteTestResult", `SQLite plugin test FAILED, result: ${err}`);
+
+        });
+    };
     return viewModel;
 }
 

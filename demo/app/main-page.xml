@@ -39,7 +39,8 @@ https://docs.nativescript.org/ui/components.
           <Label text="{{ message }}" class="h2 text-center" textWrap="true"/>
           <Button text="Share pic" tap="{{ onShare }}" class="btn btn-primary btn-active"/>
           <Button text="Scan code" tap="{{ onScan }}" class="btn btn-primary btn-active"/>
-
+          <Button text="SQLite self test" tap="{{ onSqliteTest }}" class="btn btn-primary btn-active"/>
+          <Label text="{{ sqliteTestResult }}" class="h2 text-center" textWrap="true"/>
       </StackLayout>
     </ScrollView>
 </Page>
