@@ -34,7 +34,7 @@
   "dependencies": {
     "fs-extra": "^5.0.0",
     "mkdirp": "^0.5.1",
-    "nativescript-hook": "0.2.0",
+    "nativescript-hook": "0.2.x",
     "temp": "0.8.3",
     "xml-js": "1.6.2"
   }
