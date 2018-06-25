@@ -25,6 +25,8 @@ const CORDOVA_PROJECT_NAME = "myProject";
 const NATIVE_CORDOVA_IOS_PROJECT_NAME = "HelloCordova";
 const CORDOVA_PROJECT_INFO_PLIST_RELATIVE_PATH = `${NATIVE_CORDOVA_IOS_PROJECT_NAME}/${NATIVE_CORDOVA_IOS_PROJECT_NAME}-Info.plist`;
 const IOS_RESOURCES_DIR_NAME = "Resources";
+const IOS_PODFILE_FILE_NAME = "Podfile";
+
 
 module.exports = function ($projectData, hookArgs) {
     const platform = hookArgs.platform.toLowerCase();
@@ -69,8 +71,8 @@ module.exports = function ($projectData, hookArgs) {
     const tempPluginsFolder = path.join(tempCordovaProject, "cordova-plugins");
     mkdirp.sync(tempPluginsFolder);
     // Add all plugins from the original project
-    console.log(`Adding plugins ${pluginDataObjects.map(x => x.id)}...`);
     pluginDataObjects.forEach(pluginData => {
+        console.log(`Adding plugin ${pluginData.id}...`);
         const pluginFolderName = path.basename(pluginData.absolutePath);
         const pluginDest = path.join(tempPluginsFolder, pluginFolderName);
         // The plugins should be copied to the temp project and then we need to remove the
@@ -122,6 +124,15 @@ function walkSync(dir, filelist = []) {
 
     });
     return filelist;
+}
+
+function copyWithFlatteningSync(src, dest) {
+    console.log(`Flattening ${src} => ${dest}`);
+    mkdirp.sync(dest);
+
+    walkSync(src).forEach(file => {
+        fs.copyFileSync(file, path.join(dest, path.basename(file)));
+    })
 }
 
 function getPluginDataObjects(projectDir) {
@@ -232,15 +243,24 @@ function processCordovaProject(cordovaProjectDir, platform, pluginDataObjects, i
         const filesToCopy = [
             { src: path.join(platformDirectory, "www", CORDOVA_PLUGINS_FILE_NAME), dest: path.join(nsCordovaPluginDir, addPlatformSuffixBeforeExtension(CORDOVA_PLUGINS_FILE_NAME, platform)) },
             { src: path.join(platformDirectory, "www", PLUGINS_DIR_NAME), dest: iosPluginsJsDir },
-            { src: path.join(platformDirectory, NATIVE_CORDOVA_IOS_PROJECT_NAME, "Plugins"), dest: path.join(nsCordovaPlatformSrcDir, "Plugins") },
             { src: path.join(platformDirectory, NATIVE_CORDOVA_IOS_PROJECT_NAME, "config.xml"), dest: addPlatformSuffixBeforeExtension(path.join(nsCordovaPluginDir, "config.xml"), platform) },
             { src: path.join(platformDirectory, CORDOVA_PROJECT_INFO_PLIST_RELATIVE_PATH), dest: path.join(nsCordovaPlatformDir, "Info.plist") },
             { src: path.join(platformDirectory, NATIVE_CORDOVA_IOS_PROJECT_NAME, IOS_RESOURCES_DIR_NAME), dest: nsCordovaPlatformResDir },
         ];
 
         filesToCopy.forEach(item => {
-            fse.copySync(item.src, item.dest);
+            if (fs.existsSync(item.src)) {
+                console.log(`Copying ${item.src} => ${item.dest}`);
+                fse.copySync(item.src, item.dest);
+            }
         });
+
+        // Plugins source files need to be in one directory so that they can include headers from each other.
+        // E.g. file-transfer plugin includes headers from file plugin
+        // Cordova adds them to a single group without any nesting and this works,
+        // but our current implementation in node-xcode and CLI is to add each directory
+        // in its subgroup which breaks this feature
+        copyWithFlatteningSync(path.join(platformDirectory, NATIVE_CORDOVA_IOS_PROJECT_NAME, "Plugins"), path.join(nsCordovaPlatformSrcDir, "Plugins"));
 
         addPlatformSuffixToAllFiles(iosPluginsJsDir, platform);
 
@@ -265,6 +285,17 @@ function processCordovaProject(cordovaProjectDir, platform, pluginDataObjects, i
         xcconfigContents += `SYSTEM_HEADER_SEARCH_PATHS = $(inherited) ${path.join(nsCordovaPlatformDir, "src/Cordova")}\n`;
 
         fs.writeFileSync(path.join(nsCordovaPlatformDir, "build.xcconfig"), xcconfigContents + "\n");
+
+        // Get pods from Podfile
+        const podfileSrc = path.join(platformDirectory, IOS_PODFILE_FILE_NAME);
+        const podfileDest = path.join(nsCordovaPlatformDir, IOS_PODFILE_FILE_NAME);
+        if (fs.existsSync(podfileSrc)) {
+            const podContents = fs.readFileSync(podfileSrc).toString();
+
+            const filterRegEx = /^\s*(?:pod|platform)\s.*$/gm;
+            const filteredPodContents = podContents.match(filterRegEx).join("\n");
+            fs.writeFileSync(podfileDest, filteredPodContents);
+        }
     }
 
 }
@@ -348,6 +379,7 @@ function getNsCordovaPluginDir() {
 }
 
 function spawnSync(executable, args, opts) {
+    opts = Object.assign({stdio: 'inherit'}, opts);
     var res = childProcess.spawnSync(executable, args, opts);
 
     if (res.status !== 0) {
