@@ -23,10 +23,8 @@ const NATIVESCRIPT_PLUGIN_NAME="cordova-nativescript-plugin";
 
 const timer = require('timer');
 
-global.window = {
-    setTimeout : timer.setTimeout
-};
 global.setTimeout = timer.setTimeout;
+global.window = global;
 
 const navigator = {
     appCodeName : "NativeScript",
