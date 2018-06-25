@@ -5,4 +5,6 @@
 // DEVELOPMENT_TEAM = YOUR_TEAM_ID;
 ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 ASSETCATALOG_COMPILER_LAUNCHIMAGE_NAME = LaunchImage;
-ADDITIONAL_CORDOVA_LDFLAGS = -framework AudioToolbox -lsqlite3
+ADDITIONAL_CORDOVA_LDFLAGS = -framework AudioToolbox -lsqlite3 -lz
+
+OTHER_CPLUSPLUSFLAGS = $(inherited) -Wno-invalid-partial-specialization

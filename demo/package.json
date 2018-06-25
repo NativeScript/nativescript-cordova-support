@@ -5,9 +5,6 @@
   "repository": "<fill-your-repository-here>",
   "nativescript": {
     "id": "org.nativescript.cdvNativeTest",
-    "tns-android": {
-      "version": "4.0.0"
-    },
     "cordova": {
       "plugin-variables": {
         "cordova-plugin-telerik-imagepicker": {
@@ -19,7 +16,10 @@
       }
     },
     "tns-ios": {
-      "version": "4.0.1"
+      "version": "4.1.0"
+    },
+    "tns-android": {
+      "version": "4.1.1"
     }
   },
   "dependencies": {
@@ -27,11 +27,12 @@
     "cordova-plugin-camera": "^4.0.3",
     "cordova-plugin-email-composer": "^0.8.15",
     "cordova-plugin-telerik-imagepicker": "2.1.10",
+    "cordova-plugin-tensorflow": "git+https://github.com/heigeo/cordova-plugin-tensorflow.git#9c8b74c81a642b1381be517de8f22e0caa649180",
     "cordova-plugin-x-socialsharing": "^5.4.0",
     "cordova-sqlite-storage": "2.3.1",
     "nativescript-theme-core": "~1.0.4",
     "phonegap-plugin-barcodescanner": "https://github.com/mbektchiev/phonegap-plugin-barcodescanner/archive/7.1.2-fixed.tar.gz",
-    "tns-core-modules": "~4.0.0"
+    "tns-core-modules": "^4.1.0"
   },
   "devDependencies": {
     "babel-traverse": "6.4.5",
