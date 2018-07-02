@@ -4,6 +4,7 @@ const convert = require('xml-js');
 const mkdirp = require('mkdirp');
 const fse = require('fs-extra')
 const temp = require("temp");
+const rimraf = require("rimraf");
 const childProcess = require("child_process");
 
 const CORDOVA_FEATURES_FILE = "cordova_features.json";
@@ -44,6 +45,8 @@ module.exports = function ($projectData, hookArgs) {
         console.log("No new cordova plugins to prepare.");
         return;
     }
+
+    initializePlugin(projectDir, modulesFolder);
 
     temp.track();
     const tempCordovaProject = temp.mkdirSync("cordova-project");
@@ -170,7 +173,7 @@ function prepareForAddingCordovaPlugins(platform, pluginPackageName, platformDir
 
 </manifest>
 `);
-    } else if (platform === "ios"){
+    } else if (platform === "ios") {
 
         //Truncate Info.plist in order to track plugin keys and add only them
         const infoPlistContents =
@@ -248,8 +251,8 @@ function processCordovaProject(cordovaProjectDir, platform, pluginDataObjects, i
             'AssetsLibrary.framework': 1,
         };
         const frameworks = Object.assign(
-                cordova_ios_keep_these_frameworks,
-                require(path.join(platformDirectory, "frameworks.json")));
+            cordova_ios_keep_these_frameworks,
+            require(path.join(platformDirectory, "frameworks.json")));
 
         let xcconfigContents = "OTHER_LDFLAGS = $(inherited) $(ADDITIONAL_CORDOVA_LDFLAGS)";
         Object.keys(frameworks).forEach((framework) => {
@@ -356,3 +359,13 @@ stderr:\n
 ${res.stderr}`);
     }
 }
+
+function initializePlugin(projectDir, modulesFolder) {
+    const pluginPlatformCacheFolder = path.join(modulesFolder, PLUGIN_NAME, "platforms-cache");
+    const pluginPlatformFolder = path.join(modulesFolder, PLUGIN_NAME, PLATFORMS_STRING);
+    const tmpPlugin = path.join(projectDir, PLATFORMS_STRING, "tempPlugin", PLUGIN_NAME.replace(/-/g, "_"));
+    rimraf.sync(pluginPlatformFolder);
+    rimraf.sync(tmpPlugin);
+    fse.copySync(pluginPlatformCacheFolder, pluginPlatformFolder);
+}
+
