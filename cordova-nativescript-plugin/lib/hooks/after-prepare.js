@@ -1,10 +1,13 @@
 const path = require('path');
+const rimraf = require("rimraf");
 const fs = require('fs');
 
 module.exports = function ($projectData, hookArgs) {
-    const includeGradlePath = path.join(__dirname, "..", "..", "platforms", "android", "include.gradle");
+    const pluginPlatformsAndroid = path.join(__dirname, "..", "..", "platforms", "android");
+    const libsPath = path.join(pluginPlatformsAndroid, "libs");
+    const includeGradlePath = path.join(pluginPlatformsAndroid, "include.gradle");
 
-    if (fs.existsSync(includeGradlePath)) {
-        fs.unlinkSync(includeGradlePath);
-    }
+    rimraf.sync(includeGradlePath);
+    // Remove all jar dependencies as they are already included in this plugin's built .aar
+    rimraf.sync(path.join(libsPath, "*.jar"));
 }

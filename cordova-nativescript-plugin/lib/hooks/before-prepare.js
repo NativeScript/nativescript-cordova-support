@@ -18,7 +18,6 @@ const CORDOVA_PLUGINS_FILE_NAME = "cordova_plugins.js";
 const NODE_NAME = "node";
 const APP_DIRECTORY_NAME = "app";
 const LIBS_DIRECTORY_NAME = "libs";
-const NATIVE_CORDOVA_LIBS_DIRECTORY_NAME = "ns-libs";
 const CORDOVA_SUBPROJECT_DEPENDENCIES_START_STRING = "// SUB-PROJECT DEPENDENCIES START";
 const CORDOVA_SUBPROJECT_DEPENDENCIES_END_STRING = "// SUB-PROJECT DEPENDENCIES END";
 const PLUGIN_GRADLE_EXTENSIONS_START_STRING = "// PLUGIN GRADLE EXTENSIONS START";
@@ -241,7 +240,7 @@ function processCordovaProject(cordovaProjectDir, platform, pluginDataObjects, i
         // Handle libs files separately as they are in a different directory
         const libsDirectory = path.join(getAndroidAppDir(platformDirectory), LIBS_DIRECTORY_NAME);
         if (fs.existsSync(libsDirectory)) {
-            const nsCordovaPluginLibsDirectory = path.join(nsCordovaPlatformDir, NATIVE_CORDOVA_LIBS_DIRECTORY_NAME);
+            const nsCordovaPluginLibsDirectory = path.join(nsCordovaPlatformDir, LIBS_DIRECTORY_NAME);
             fse.copySync(libsDirectory, nsCordovaPluginLibsDirectory);
         }
 
@@ -332,13 +331,13 @@ ext.cdvMinSdkVersion = null
 ${pluginGradleExtensionsSection}
 
 dependencies {
-    implementation fileTree(dir: '${NATIVE_CORDOVA_LIBS_DIRECTORY_NAME}', include: '*.jar')
+    implementation fileTree(dir: '${LIBS_DIRECTORY_NAME}', include: '*.jar')
     ${subProjectDependenciesSection}
 }
 
 repositories{
     flatDir{
-        dirs '${NATIVE_CORDOVA_LIBS_DIRECTORY_NAME}'
+        dirs '${LIBS_DIRECTORY_NAME}'
     }
 }`);
 
