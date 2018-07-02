@@ -17,6 +17,8 @@ const PLATFORMS_STRING = "platforms";
 const CORDOVA_PLUGINS_FILE_NAME = "cordova_plugins.js";
 const NODE_NAME = "node";
 const APP_DIRECTORY_NAME = "app";
+const LIBS_DIRECTORY_NAME = "libs";
+const NATIVE_CORDOVA_LIBS_DIRECTORY_NAME = "ns-libs";
 const CORDOVA_SUBPROJECT_DEPENDENCIES_START_STRING = "// SUB-PROJECT DEPENDENCIES START";
 const CORDOVA_SUBPROJECT_DEPENDENCIES_END_STRING = "// SUB-PROJECT DEPENDENCIES END";
 const PLUGIN_GRADLE_EXTENSIONS_START_STRING = "// PLUGIN GRADLE EXTENSIONS START";
@@ -209,6 +211,7 @@ function processCordovaProject(cordovaProjectDir, platform, pluginDataObjects, i
     const nsCordovaPlatformDir = path.join(nsCordovaPluginDir, "platforms", platform);
 
     if (android) {
+        debugger;
         const mainDirectory = getAndroidMainDir(platformDirectory);
         fs.readdirSync(mainDirectory).forEach(mainDirFile => {
             const fullSrcPath = path.join(mainDirectory, mainDirFile);
@@ -234,6 +237,13 @@ function processCordovaProject(cordovaProjectDir, platform, pluginDataObjects, i
                     fse.copySync(fullSrcPath, fullDestPath);
             }
         });
+
+        // Handle libs files separately as they are in a different directory
+        const libsDirectory = path.join(getAndroidAppDir(platformDirectory), LIBS_DIRECTORY_NAME);
+        if (fs.existsSync(libsDirectory)) {
+            const nsCordovaPluginLibsDirectory = path.join(nsCordovaPlatformDir, NATIVE_CORDOVA_LIBS_DIRECTORY_NAME);
+            fse.copySync(libsDirectory, nsCordovaPluginLibsDirectory);
+        }
 
         handleGradleFiles(pluginDataObjects, platformDirectory, nsCordovaPlatformDir);
     } else {
@@ -304,7 +314,7 @@ function handleGradleFiles(pluginDataObjects, platformDirectory, nsCordovaPlatfo
 
     // Handle gradle-specifics
     const destIncludeGradle = path.join(nsCordovaPlatformDir, "include.gradle");
-    const cdvBuildGradleFilePath = path.join(platformDirectory, APP_DIRECTORY_NAME, "build.gradle");
+    const cdvBuildGradleFilePath = path.join(getAndroidAppDir(platformDirectory), "build.gradle");
     const cdvBuildGradleFileContents = fs.readFileSync(cdvBuildGradleFilePath, "utf8");
 
     let subProjectDependenciesSection = getStringBetween(cdvBuildGradleFileContents, CORDOVA_SUBPROJECT_DEPENDENCIES_START_STRING, CORDOVA_SUBPROJECT_DEPENDENCIES_END_STRING);
@@ -322,6 +332,7 @@ ext.cdvMinSdkVersion = null
 ${pluginGradleExtensionsSection}
 
 dependencies {
+    implementation fileTree(dir: '${NATIVE_CORDOVA_LIBS_DIRECTORY_NAME}', include: '*.jar')
     ${subProjectDependenciesSection}
 }`);
 
@@ -356,8 +367,12 @@ function getUnifiedAppCompatSupportContent(originalContent) {
         .replace(/(com.android.support:support-v4:).*?(['"])/g, "$1$supportVersion$2");
 }
 
+function getAndroidAppDir(platformsDirectory) {
+    return path.join(platformsDirectory, APP_DIRECTORY_NAME);
+}
+
 function getAndroidMainDir(platformsDirectory) {
-    return path.join(platformsDirectory, APP_DIRECTORY_NAME, "src", "main");
+    return path.join(getAndroidAppDir(platformsDirectory), "src", "main");
 }
 
 function addPlatformSuffixBeforeExtension(filename, platform) {
@@ -379,7 +394,7 @@ function getNsCordovaPluginDir() {
 }
 
 function spawnSync(executable, args, opts) {
-    opts = Object.assign({stdio: 'inherit'}, opts);
+    opts = Object.assign({ stdio: 'inherit' }, opts);
     var res = childProcess.spawnSync(executable, args, opts);
 
     if (res.status !== 0) {
