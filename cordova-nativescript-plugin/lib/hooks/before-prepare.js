@@ -334,6 +334,12 @@ ${pluginGradleExtensionsSection}
 dependencies {
     implementation fileTree(dir: '${NATIVE_CORDOVA_LIBS_DIRECTORY_NAME}', include: '*.jar')
     ${subProjectDependenciesSection}
+}
+
+repositories{
+    flatDir{
+        dirs '${NATIVE_CORDOVA_LIBS_DIRECTORY_NAME}'
+    }
 }`);
 
 
