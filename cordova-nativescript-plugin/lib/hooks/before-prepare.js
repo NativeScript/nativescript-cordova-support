@@ -210,7 +210,6 @@ function processCordovaProject(cordovaProjectDir, platform, pluginDataObjects, i
     const nsCordovaPlatformDir = path.join(nsCordovaPluginDir, "platforms", platform);
 
     if (android) {
-	    debugger;
         const mainDirectory = getAndroidMainDir(platformDirectory);
         fs.readdirSync(mainDirectory).forEach(mainDirFile => {
             const fullSrcPath = path.join(mainDirectory, mainDirFile);

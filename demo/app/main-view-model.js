@@ -135,7 +135,7 @@ function createViewModel(args) {
         const page = args.object;
         let img = view.getViewById(page, "img");
 
-        const image = require("./image");
+        const image = require("./image.json");
         img.src = image.url;
 
         var tf = new window.TensorFlowJS('inception-v1');
