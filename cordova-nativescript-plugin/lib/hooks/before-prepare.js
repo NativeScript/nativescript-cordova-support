@@ -210,6 +210,7 @@ function processCordovaProject(cordovaProjectDir, platform, pluginDataObjects, i
     const nsCordovaPlatformDir = path.join(nsCordovaPluginDir, "platforms", platform);
 
     if (android) {
+	    debugger;
         const mainDirectory = getAndroidMainDir(platformDirectory);
         fs.readdirSync(mainDirectory).forEach(mainDirFile => {
             const fullSrcPath = path.join(mainDirectory, mainDirFile);
@@ -237,11 +238,8 @@ function processCordovaProject(cordovaProjectDir, platform, pluginDataObjects, i
         });
 
         // Handle libs files separately as they are in a different directory
-        const libsDirectory = path.join(getAndroidAppDir(platformDirectory), LIBS_DIRECTORY_NAME);
-        if (fs.existsSync(libsDirectory)) {
-            const nsCordovaPluginLibsDirectory = path.join(nsCordovaPlatformDir, LIBS_DIRECTORY_NAME);
-            fse.copySync(libsDirectory, nsCordovaPluginLibsDirectory);
-        }
+        copyLibsDir(path.join(platformDirectory, LIBS_DIRECTORY_NAME), nsCordovaPlatformDir);
+        copyLibsDir(path.join(getAndroidAppDir(platformDirectory), LIBS_DIRECTORY_NAME), nsCordovaPlatformDir);
 
         handleGradleFiles(pluginDataObjects, platformDirectory, nsCordovaPlatformDir);
     } else {
@@ -306,6 +304,13 @@ function processCordovaProject(cordovaProjectDir, platform, pluginDataObjects, i
         }
     }
 
+}
+
+function copyLibsDir(libsDirectory, nsCordovaPlatformDir) {
+    if (fs.existsSync(libsDirectory)) {
+        const nsCordovaPluginLibsDirectory = path.join(nsCordovaPlatformDir, LIBS_DIRECTORY_NAME);
+        fse.copySync(libsDirectory, nsCordovaPluginLibsDirectory);
+    }
 }
 
 function handleGradleFiles(pluginDataObjects, platformDirectory, nsCordovaPlatformDir) {
