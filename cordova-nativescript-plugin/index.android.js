@@ -4,9 +4,6 @@ const timer = require("timer");
 const NATIVESCRIPT_PLUGIN_NAME = "cordova-nativescript-plugin";
 
 
-global.window = {
-    setTimeout: timer.setTimeout
-};
 global.setTimeout = timer.setTimeout;
 
 const navigator = {
@@ -22,7 +19,8 @@ const navigator = {
     userAgent: "NativeScript for android"
 };
 
-global.navigator = window.navigator = navigator;
+global.navigator = navigator;
+global.window = global;
 
 (function () {
     var PLATFORM_VERSION_BUILD_LABEL = '7.1.0';
