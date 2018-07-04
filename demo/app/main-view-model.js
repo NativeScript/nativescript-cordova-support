@@ -138,7 +138,7 @@ function createViewModel(args) {
         const image = require("./image.json");
         img.src = image.url;
 
-        var tf = new window.TensorFlow('inception-v1');
+        var tf = new window.TensorFlowJS('inception-v1');
         tf.classify(image.base64, (r) => {
             viewModel.set("sqliteTestResult", `classify result: ${JSON.stringify(r, null, 0)}`);
 
