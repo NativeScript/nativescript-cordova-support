@@ -18,6 +18,8 @@ const CORDOVA_PLUGINS_FILE_NAME = "cordova_plugins.js";
 const NODE_NAME = "node";
 const APP_DIRECTORY_NAME = "app";
 const LIBS_DIRECTORY_NAME = "libs";
+const JNI_LIBS_DIRECTORY_NAME = "jniLibs";
+const SO_FILE_EXTENSION = ".so";
 const CORDOVA_SUBPROJECT_DEPENDENCIES_START_STRING = "// SUB-PROJECT DEPENDENCIES START";
 const CORDOVA_SUBPROJECT_DEPENDENCIES_END_STRING = "// SUB-PROJECT DEPENDENCIES END";
 const PLUGIN_GRADLE_EXTENSIONS_START_STRING = "// PLUGIN GRADLE EXTENSIONS START";
@@ -237,8 +239,8 @@ function processCordovaProject(cordovaProjectDir, platform, pluginDataObjects, i
         });
 
         // Handle libs files separately as they are in a different directory
-        copyLibsDir(path.join(platformDirectory, LIBS_DIRECTORY_NAME), nsCordovaPlatformDir);
-        copyLibsDir(path.join(getAndroidAppDir(platformDirectory), LIBS_DIRECTORY_NAME), nsCordovaPlatformDir);
+        handleLibsDir(path.join(platformDirectory, LIBS_DIRECTORY_NAME), nsCordovaPlatformDir);
+        handleLibsDir(path.join(getAndroidAppDir(platformDirectory), LIBS_DIRECTORY_NAME), nsCordovaPlatformDir);
 
         handleGradleFiles(pluginDataObjects, platformDirectory, nsCordovaPlatformDir);
     } else {
@@ -305,10 +307,21 @@ function processCordovaProject(cordovaProjectDir, platform, pluginDataObjects, i
 
 }
 
-function copyLibsDir(libsDirectory, nsCordovaPlatformDir) {
+function handleLibsDir(libsDirectory, nsCordovaPlatformDir) {
     if (fs.existsSync(libsDirectory)) {
         const nsCordovaPluginLibsDirectory = path.join(nsCordovaPlatformDir, LIBS_DIRECTORY_NAME);
-        fse.copySync(libsDirectory, nsCordovaPluginLibsDirectory);
+        const nsCordovaPluginJniLibsDirectory = path.join(nsCordovaPlatformDir, JNI_LIBS_DIRECTORY_NAME);
+        const libFiles = walkSync(libsDirectory);
+        libFiles.forEach(fullSrcPath => {
+            const relativeFilePath = path.relative(libsDirectory, fullSrcPath);
+            let fullDestPath = path.join(nsCordovaPluginLibsDirectory, relativeFilePath);
+            if (path.extname(fullSrcPath) === SO_FILE_EXTENSION) {
+                fullDestPath = path.join(nsCordovaPluginJniLibsDirectory, relativeFilePath);
+            }
+
+            mkdirp.sync(path.dirname(fullDestPath));
+            fse.copySync(fullSrcPath, fullDestPath);
+        });
     }
 }
 
