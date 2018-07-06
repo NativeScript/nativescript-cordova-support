@@ -41,6 +41,7 @@ https://docs.nativescript.org/ui/components.
           <Button text="Scan code" tap="{{ onScan }}" class="btn btn-primary btn-active"/>
           <Button text="SQLite self test" tap="{{ onSqliteTest }}" class="btn btn-primary btn-active"/>
           <Label text="{{ sqliteTestResult }}" class="h2 text-center" textWrap="true"/>
+          <Button text="Classify image (TensorFlow)" tap="{{ onClassify }}" class="btn btn-primary btn-active"/>
       </StackLayout>
     </ScrollView>
 </Page>

@@ -151,7 +151,7 @@
 }
 
 -(NSString*)configFilePath{
-    NSString* path = self.configFile ?: @"app/tns_modules/cordova-nativescript-plugin/config.xml";
+    NSString* path = self.configFile ?: @"app/tns_modules/nativescript-cordova-support/config.xml";
 
     // if path is relative, resolve it against the main bundle
     if(![path isAbsolutePath]){

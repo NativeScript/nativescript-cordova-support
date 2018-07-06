@@ -8,7 +8,7 @@ const rimraf = require("rimraf");
 const childProcess = require("child_process");
 
 const CORDOVA_FEATURES_FILE = "cordova_features.json";
-const PLUGIN_NAME = "cordova-nativescript-plugin"
+const PLUGIN_NAME = "nativescript-cordova-support"
 const ANDROID_MANIFEST_FILE_NAME = "AndroidManifest.xml";
 const PACKAGE_JSON_FILE_NAME = "package.json";
 const CORDOVA_NAME = "cordova";
@@ -17,6 +17,9 @@ const PLATFORMS_STRING = "platforms";
 const CORDOVA_PLUGINS_FILE_NAME = "cordova_plugins.js";
 const NODE_NAME = "node";
 const APP_DIRECTORY_NAME = "app";
+const LIBS_DIRECTORY_NAME = "libs";
+const JNI_LIBS_DIRECTORY_NAME = "jniLibs";
+const SO_FILE_EXTENSION = ".so";
 const CORDOVA_SUBPROJECT_DEPENDENCIES_START_STRING = "// SUB-PROJECT DEPENDENCIES START";
 const CORDOVA_SUBPROJECT_DEPENDENCIES_END_STRING = "// SUB-PROJECT DEPENDENCIES END";
 const PLUGIN_GRADLE_EXTENSIONS_START_STRING = "// PLUGIN GRADLE EXTENSIONS START";
@@ -25,6 +28,8 @@ const CORDOVA_PROJECT_NAME = "myProject";
 const NATIVE_CORDOVA_IOS_PROJECT_NAME = "HelloCordova";
 const CORDOVA_PROJECT_INFO_PLIST_RELATIVE_PATH = `${NATIVE_CORDOVA_IOS_PROJECT_NAME}/${NATIVE_CORDOVA_IOS_PROJECT_NAME}-Info.plist`;
 const IOS_RESOURCES_DIR_NAME = "Resources";
+const IOS_PODFILE_FILE_NAME = "Podfile";
+
 
 module.exports = function ($projectData, hookArgs) {
     const platform = hookArgs.platform.toLowerCase();
@@ -69,8 +74,8 @@ module.exports = function ($projectData, hookArgs) {
     const tempPluginsFolder = path.join(tempCordovaProject, "cordova-plugins");
     mkdirp.sync(tempPluginsFolder);
     // Add all plugins from the original project
-    console.log(`Adding plugins ${pluginDataObjects.map(x => x.id)}...`);
     pluginDataObjects.forEach(pluginData => {
+        console.log(`Adding plugin ${pluginData.id}...`);
         const pluginFolderName = path.basename(pluginData.absolutePath);
         const pluginDest = path.join(tempPluginsFolder, pluginFolderName);
         // The plugins should be copied to the temp project and then we need to remove the
@@ -122,6 +127,15 @@ function walkSync(dir, filelist = []) {
 
     });
     return filelist;
+}
+
+function copyWithFlatteningSync(src, dest) {
+    console.log(`Flattening ${src} => ${dest}`);
+    mkdirp.sync(dest);
+
+    walkSync(src).forEach(file => {
+        fs.copyFileSync(file, path.join(dest, path.basename(file)));
+    })
 }
 
 function getPluginDataObjects(projectDir) {
@@ -224,6 +238,10 @@ function processCordovaProject(cordovaProjectDir, platform, pluginDataObjects, i
             }
         });
 
+        // Handle libs files separately as they are in a different directory
+        handleLibsDir(path.join(platformDirectory, LIBS_DIRECTORY_NAME), nsCordovaPlatformDir);
+        handleLibsDir(path.join(getAndroidAppDir(platformDirectory), LIBS_DIRECTORY_NAME), nsCordovaPlatformDir);
+
         handleGradleFiles(pluginDataObjects, platformDirectory, nsCordovaPlatformDir);
     } else {
         const nsCordovaPlatformSrcDir = path.join(nsCordovaPlatformDir, "src");
@@ -232,15 +250,24 @@ function processCordovaProject(cordovaProjectDir, platform, pluginDataObjects, i
         const filesToCopy = [
             { src: path.join(platformDirectory, "www", CORDOVA_PLUGINS_FILE_NAME), dest: path.join(nsCordovaPluginDir, addPlatformSuffixBeforeExtension(CORDOVA_PLUGINS_FILE_NAME, platform)) },
             { src: path.join(platformDirectory, "www", PLUGINS_DIR_NAME), dest: iosPluginsJsDir },
-            { src: path.join(platformDirectory, NATIVE_CORDOVA_IOS_PROJECT_NAME, "Plugins"), dest: path.join(nsCordovaPlatformSrcDir, "Plugins") },
             { src: path.join(platformDirectory, NATIVE_CORDOVA_IOS_PROJECT_NAME, "config.xml"), dest: addPlatformSuffixBeforeExtension(path.join(nsCordovaPluginDir, "config.xml"), platform) },
             { src: path.join(platformDirectory, CORDOVA_PROJECT_INFO_PLIST_RELATIVE_PATH), dest: path.join(nsCordovaPlatformDir, "Info.plist") },
             { src: path.join(platformDirectory, NATIVE_CORDOVA_IOS_PROJECT_NAME, IOS_RESOURCES_DIR_NAME), dest: nsCordovaPlatformResDir },
         ];
 
         filesToCopy.forEach(item => {
-            fse.copySync(item.src, item.dest);
+            if (fs.existsSync(item.src)) {
+                console.log(`Copying ${item.src} => ${item.dest}`);
+                fse.copySync(item.src, item.dest);
+            }
         });
+
+        // Plugins source files need to be in one directory so that they can include headers from each other.
+        // E.g. file-transfer plugin includes headers from file plugin
+        // Cordova adds them to a single group without any nesting and this works,
+        // but our current implementation in node-xcode and CLI is to add each directory
+        // in its subgroup which breaks this feature
+        copyWithFlatteningSync(path.join(platformDirectory, NATIVE_CORDOVA_IOS_PROJECT_NAME, "Plugins"), path.join(nsCordovaPlatformSrcDir, "Plugins"));
 
         addPlatformSuffixToAllFiles(iosPluginsJsDir, platform);
 
@@ -265,15 +292,44 @@ function processCordovaProject(cordovaProjectDir, platform, pluginDataObjects, i
         xcconfigContents += `SYSTEM_HEADER_SEARCH_PATHS = $(inherited) ${path.join(nsCordovaPlatformDir, "src/Cordova")}\n`;
 
         fs.writeFileSync(path.join(nsCordovaPlatformDir, "build.xcconfig"), xcconfigContents + "\n");
+
+        // Get pods from Podfile
+        const podfileSrc = path.join(platformDirectory, IOS_PODFILE_FILE_NAME);
+        const podfileDest = path.join(nsCordovaPlatformDir, IOS_PODFILE_FILE_NAME);
+        if (fs.existsSync(podfileSrc)) {
+            const podContents = fs.readFileSync(podfileSrc).toString();
+
+            const filterRegEx = /^\s*(?:pod|platform)\s.*$/gm;
+            const filteredPodContents = podContents.match(filterRegEx).join("\n");
+            fs.writeFileSync(podfileDest, filteredPodContents);
+        }
     }
 
+}
+
+function handleLibsDir(libsDirectory, nsCordovaPlatformDir) {
+    if (fs.existsSync(libsDirectory)) {
+        const nsCordovaPluginLibsDirectory = path.join(nsCordovaPlatformDir, LIBS_DIRECTORY_NAME);
+        const nsCordovaPluginJniLibsDirectory = path.join(nsCordovaPlatformDir, JNI_LIBS_DIRECTORY_NAME);
+        const libFiles = walkSync(libsDirectory);
+        libFiles.forEach(fullSrcPath => {
+            const relativeFilePath = path.relative(libsDirectory, fullSrcPath);
+            let fullDestPath = path.join(nsCordovaPluginLibsDirectory, relativeFilePath);
+            if (path.extname(fullSrcPath) === SO_FILE_EXTENSION) {
+                fullDestPath = path.join(nsCordovaPluginJniLibsDirectory, relativeFilePath);
+            }
+
+            mkdirp.sync(path.dirname(fullDestPath));
+            fse.copySync(fullSrcPath, fullDestPath);
+        });
+    }
 }
 
 function handleGradleFiles(pluginDataObjects, platformDirectory, nsCordovaPlatformDir) {
 
     // Handle gradle-specifics
     const destIncludeGradle = path.join(nsCordovaPlatformDir, "include.gradle");
-    const cdvBuildGradleFilePath = path.join(platformDirectory, APP_DIRECTORY_NAME, "build.gradle");
+    const cdvBuildGradleFilePath = path.join(getAndroidAppDir(platformDirectory), "build.gradle");
     const cdvBuildGradleFileContents = fs.readFileSync(cdvBuildGradleFilePath, "utf8");
 
     let subProjectDependenciesSection = getStringBetween(cdvBuildGradleFileContents, CORDOVA_SUBPROJECT_DEPENDENCIES_START_STRING, CORDOVA_SUBPROJECT_DEPENDENCIES_END_STRING);
@@ -291,7 +347,14 @@ ext.cdvMinSdkVersion = null
 ${pluginGradleExtensionsSection}
 
 dependencies {
+    implementation fileTree(dir: '${LIBS_DIRECTORY_NAME}', include: '*.jar')
     ${subProjectDependenciesSection}
+}
+
+repositories{
+    flatDir{
+        dirs '${LIBS_DIRECTORY_NAME}'
+    }
 }`);
 
 
@@ -325,8 +388,12 @@ function getUnifiedAppCompatSupportContent(originalContent) {
         .replace(/(com.android.support:support-v4:).*?(['"])/g, "$1$supportVersion$2");
 }
 
+function getAndroidAppDir(platformsDirectory) {
+    return path.join(platformsDirectory, APP_DIRECTORY_NAME);
+}
+
 function getAndroidMainDir(platformsDirectory) {
-    return path.join(platformsDirectory, APP_DIRECTORY_NAME, "src", "main");
+    return path.join(getAndroidAppDir(platformsDirectory), "src", "main");
 }
 
 function addPlatformSuffixBeforeExtension(filename, platform) {
@@ -348,6 +415,7 @@ function getNsCordovaPluginDir() {
 }
 
 function spawnSync(executable, args, opts) {
+    opts = Object.assign({ stdio: 'inherit' }, opts);
     var res = childProcess.spawnSync(executable, args, opts);
 
     if (res.status !== 0) {

@@ -4,7 +4,7 @@ const platformModule = require("tns-core-modules/platform");
 
 function createViewModel(args) {
     // Initialize Cordova
-    require("cordova-nativescript-plugin");
+    require("nativescript-cordova-support");
     const viewModel = new Observable();
     viewModel.message = "Choose an image to share";
     viewModel.sourceType = 0;
@@ -126,6 +126,25 @@ function createViewModel(args) {
         },
         (err) => {
             viewModel.set("sqliteTestResult", `SQLite plugin test FAILED, result: ${err}`);
+
+        });
+    };
+
+    viewModel.onClassify = function() {
+        const view = require("ui/core/view");
+        const page = args.object;
+        let img = view.getViewById(page, "img");
+
+        const image = require("./image.json");
+        img.src = image.url;
+
+        var tf = new window.TensorFlowJS('inception-v1');
+        tf.classify(image.base64, (r) => {
+            viewModel.set("sqliteTestResult", `classify result: ${JSON.stringify(r, null, 0)}`);
+
+        },
+        (err) => {
+            viewModel.set("sqliteTestResult", `classify error: ${JSON.stringify(err, null, 0)}`);
 
         });
     };

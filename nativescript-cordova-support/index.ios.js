@@ -19,14 +19,12 @@
  specific language governing permissions and limitations
  under the License.
 */
-const NATIVESCRIPT_PLUGIN_NAME="cordova-nativescript-plugin";
+const NATIVESCRIPT_PLUGIN_NAME="nativescript-cordova-support";
 
 const timer = require('timer');
 
-global.window = {
-    setTimeout : timer.setTimeout
-};
 global.setTimeout = timer.setTimeout;
+global.window = global;
 
 const navigator = {
     appCodeName : "NativeScript",
