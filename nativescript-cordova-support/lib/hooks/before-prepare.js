@@ -8,7 +8,7 @@ const rimraf = require("rimraf");
 const childProcess = require("child_process");
 
 const CORDOVA_FEATURES_FILE = "cordova_features.json";
-const PLUGIN_NAME = "cordova-nativescript-plugin"
+const PLUGIN_NAME = "nativescript-cordova-support"
 const ANDROID_MANIFEST_FILE_NAME = "AndroidManifest.xml";
 const PACKAGE_JSON_FILE_NAME = "package.json";
 const CORDOVA_NAME = "cordova";

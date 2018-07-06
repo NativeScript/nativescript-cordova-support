@@ -23,7 +23,7 @@
     }
   },
   "dependencies": {
-    "cordova-nativescript-plugin": "file:..\\cordova-nativescript-plugin",
+    "nativescript-cordova-support": "file:..\\nativescript-cordova-support",
     "cordova-plugin-camera": "^4.0.3",
     "cordova-plugin-email-composer": "^0.8.15",
     "cordova-plugin-telerik-imagepicker": "2.1.10",

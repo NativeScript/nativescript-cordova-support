@@ -1,7 +1,7 @@
 const application = require("application");
 const timer = require("timer");
 
-const NATIVESCRIPT_PLUGIN_NAME = "cordova-nativescript-plugin";
+const NATIVESCRIPT_PLUGIN_NAME = "nativescript-cordova-support";
 
 
 global.setTimeout = timer.setTimeout;

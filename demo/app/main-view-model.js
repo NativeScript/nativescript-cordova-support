@@ -4,7 +4,7 @@ const platformModule = require("tns-core-modules/platform");
 
 function createViewModel(args) {
     // Initialize Cordova
-    require("cordova-nativescript-plugin");
+    require("nativescript-cordova-support");
     const viewModel = new Observable();
     viewModel.message = "Choose an image to share";
     viewModel.sourceType = 0;

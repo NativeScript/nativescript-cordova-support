@@ -19,7 +19,7 @@
  specific language governing permissions and limitations
  under the License.
 */
-const NATIVESCRIPT_PLUGIN_NAME="cordova-nativescript-plugin";
+const NATIVESCRIPT_PLUGIN_NAME="nativescript-cordova-support";
 
 const timer = require('timer');
 
