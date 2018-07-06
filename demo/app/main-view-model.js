@@ -144,7 +144,7 @@ function createViewModel(args) {
 
         },
         (err) => {
-            viewModel.set("sqliteTestResult", `classify error: ${err}`);
+            viewModel.set("sqliteTestResult", `classify error: ${JSON.stringify(err, null, 0)}`);
 
         });
     };
