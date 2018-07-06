@@ -929,44 +929,34 @@ global.window = global;
 
         const nativeScriptCordovaInterface = new org.apache.cordova.NativeScriptCordovaInterface(application.android.foregroundActivity, nativescriptCordovaBridge);
         application.android.on(application.AndroidApplication.activityResultEvent, function (args) {
-            console.log("Event: " + args.eventName + ", Activity: " + args.activity +
-                ", requestCode: " + args.requestCode + ", resultCode: " + args.resultCode + ", Intent: " + args.intent);
             nativeScriptCordovaInterface.onActivityResult(args.requestCode, args.resultCode, args.intent)
         });
 
         application.android.on(application.AndroidApplication.activityDestroyedEvent, function (args) {
-            console.log("Event: " + args.eventName + ", Activity: " + args.activity);
             nativeScriptCordovaInterface.onDestroy();
         });
 
         application.android.on(application.AndroidApplication.activityStartedEvent, function (args) {
-            console.log("Event: " + args.eventName + ", Activity: " + args.activity);
             nativeScriptCordovaInterface.onStart();
         });
 
         application.android.on(application.AndroidApplication.activityPausedEvent, function (args) {
-            console.log("Event: " + args.eventName + ", Activity: " + args.activity);
             nativeScriptCordovaInterface.onPause();
         });
 
         application.android.on(application.AndroidApplication.activityResumedEvent, function (args) {
-            console.log("Event: " + args.eventName + ", Activity: " + args.activity);
             nativeScriptCordovaInterface.onResume();
         });
 
         application.android.on(application.AndroidApplication.activityStoppedEvent, function (args) {
-            console.log("Event: " + args.eventName + ", Activity: " + args.activity);
             nativeScriptCordovaInterface.onStop();
         });
 
         application.android.on(application.AndroidApplication.saveActivityStateEvent, function (args) {
-            console.log("Event: " + args.eventName + ", Activity: " + args.activity + ", Bundle: " + args.bundle);
             nativeScriptCordovaInterface.onSaveInstanceState(args.bundle);
         });
 
         application.android.on("activityRequestPermissions", function (args) {
-            console.log("Event: " + args.eventName + ", requestCode: " + args.requestCode +
-                ", Permissions: " + args.permissions + ", GrantResults: " + args.grantResults);
             nativeScriptCordovaInterface.onRequestPermissionsResult(args.requestCode, args.permissions, args.grantResults);
         });
 
