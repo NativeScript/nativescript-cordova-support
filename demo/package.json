@@ -27,7 +27,7 @@
     "cordova-plugin-camera": "^4.0.3",
     "cordova-plugin-email-composer": "^0.8.15",
     "cordova-plugin-telerik-imagepicker": "2.1.10",
-    "cordova-plugin-tensorflow": "git+https://github.com/Mitko-Kerezov/cordova-plugin-tensorflow.git#21e64afbc25a87628316cfb1c9fbcc7f7b9c4494",
+    "cordova-plugin-tensorflow": "https://github.com/Mitko-Kerezov/cordova-plugin-tensorflow/archive/0.0.1-fixed.tar.gz",
     "cordova-plugin-x-socialsharing": "^5.4.0",
     "cordova-sqlite-storage": "2.3.1",
     "nativescript-theme-core": "~1.0.4",
