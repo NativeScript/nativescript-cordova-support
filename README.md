@@ -7,7 +7,7 @@ NativeScript is an open-source framework to develop apps on the Apple iOS and An
 ## Installation
 Add the Cordova plugins you want to use as dependencies to your project, and then add the `nativescript-cordova-support` plugin using the following command:
 ```
-tns plugin add https://github.com/NativeScript/nativescript-cordova-support
+tns plugin add <path-to-cloned-nativescript-cordova-support-repo>/nativescript-cordova-support
 ```
 During builds, the `nativescript-cordova-support` plugin processes all Cordova plugin dependencies so you can use them in your project's source code.
 
