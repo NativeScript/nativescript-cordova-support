@@ -16,18 +16,23 @@ https://docs.nativescript.org/plugins/building-plugins
 
 By following Step 1 and Step 4 in the above documentation we can create a local package.
 
-Clone the repository into a local directory - "cordova-support-pacakge"
-Navigate into the "cordova-support-pacakge" folder.
-Rename `nativescript-cordova-support` folder to "src".
-Create a folder "publish" in "cordova-support-pacakge".
+Clone the repository into a local directory - ```cordova-support-pacakge```
+
+Navigate into the ```cordova-support-pacakge``` folder.
+Rename ```nativescript-cordova-support``` folder to ```src```.
+Create a folder ```publish``` in ```cordova-support-pacakge```.
 Navigate to publish folder. (Contents of Publish folder can be taken from Step 1 in building plugins documentation)
-Create a local package by running pack.sh . This will create a folder named "package". 
+Create a local package by running pack.sh . This will create a folder named ```package```. 
 
 Use the command similar to below using your folder structure to add the plugin
+```
 tns plugin add C:\Users\brao\cordova-support-pacakge\publish\package\nativescript-cordova-support-0.1.0.tgz
+```
 
 Verify the package.json in your app. It should have entry with nativescript-cordova-support-0.1.0.tgz
-"nativescript-cordova-support": "file:../../cordova-support-pacakge/publish/package/nativescript-cordova-support-0.1.0.tgz",
+```
+nativescript-cordova-support": "file:../../cordova-support-pacakge/publish/package/nativescript-cordova-support-0.1.0.tgz
+```
 
 During builds, the `nativescript-cordova-support` plugin processes all Cordova plugin dependencies so you can use them in your project's source code.
 
