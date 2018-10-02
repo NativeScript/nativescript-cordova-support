@@ -5,10 +5,35 @@ This is a NativeScript plugin that lets you use Cordova plugins in your NativeSc
 NativeScript is an open-source framework to develop apps on the Apple iOS and Android platforms. You can find out more about on [nativescript.org](https://www.nativescript.org/).
 
 ## Installation
-Add the Cordova plugins you want to use as dependencies to your project, and then add the `nativescript-cordova-support` plugin using the following command:
+Add the Cordova plugins you want to use as dependencies to your project and then add the `nativescript-cordova-support` plugin using the following command:
 ```
 tns plugin add <path-to-cloned-nativescript-cordova-support-repo>/nativescript-cordova-support
 ```
+
+If the above step do not work try the below option.
+This is based on the package publishing guidelines mentioned in the below documentation. 
+https://docs.nativescript.org/plugins/building-plugins
+
+By following Step 1 and Step 4 in the above documentation we can create a local package.
+
+Clone the repository into a local directory - ```cordova-support-pacakge```
+
+Navigate into the ```cordova-support-pacakge``` folder.
+Rename ```nativescript-cordova-support``` folder to ```src```.
+Create a folder ```publish``` in ```cordova-support-pacakge```.
+Navigate to publish folder. (Contents of Publish folder can be taken from Step 1 in building plugins documentation)
+Create a local package by running pack.sh . This will create a folder named ```package```. 
+
+Use the command similar to below using your folder structure to add the plugin
+```
+tns plugin add C:\Users\brao\cordova-support-pacakge\publish\package\nativescript-cordova-support-0.1.0.tgz
+```
+
+Verify the package.json in your app. It should have entry with nativescript-cordova-support-0.1.0.tgz
+```
+nativescript-cordova-support": "file:../../cordova-support-pacakge/publish/package/nativescript-cordova-support-0.1.0.tgz
+```
+
 During builds, the `nativescript-cordova-support` plugin processes all Cordova plugin dependencies so you can use them in your project's source code.
 
 ## Demo
