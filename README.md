@@ -9,6 +9,28 @@ Add the Cordova plugins you want to use as dependencies to your project, and the
 ```
 tns plugin add <path-to-cloned-nativescript-cordova-support-repo>/nativescript-cordova-support
 ```
+
+If the above step does not work try the following option.
+This is based on the package publishing guidelines mentioned in the [Building Plugins documentation](https://docs.nativescript.org/plugins/building-plugins).
+
+By following Step 1 and Step 4 in the above documentation we can create a local package.
+
+Clone the repository into a local directory - `nativescript-cordova-support`
+
+* Navigate into the `nativescript-cordova-support` directory.
+* Navigate to `publish` directory.
+* Create a local package by running `./pack.sh`. This will create a directory named `package`.
+
+* Use a command similar to the following matching your directory structure to add the plugin:
+```
+tns plugin add <path-to-cordova-support-package>\publish\package\nativescript-cordova-support-0.1.0.tgz
+```
+
+* Verify the `package.json` in your app. It should have entry with `nativescript-cordova-support-0.1.0.tgz`
+```
+nativescript-cordova-support": "file:../../nativescript-cordova-support/publish/package/nativescript-cordova-support-0.1.0.tgz
+```
+
 During builds, the `nativescript-cordova-support` plugin processes all Cordova plugin dependencies so you can use them in your project's source code.
 
 ## Demo

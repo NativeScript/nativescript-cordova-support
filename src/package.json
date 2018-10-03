@@ -3,11 +3,23 @@
   "name": "nativescript-cordova-support",
   "description": "This plugin enables using cordova plugins inside a nativescript project",
   "issue": "",
-  "keywords": [],
+  "keywords": [
+      "NativeScript",
+      "JavaScript",
+      "Android",
+      "iOS",
+      "Cordova"
+  ],
+  "bugs": {
+      "url": "https://github.com/NativeScript/nativescript-cordova-support/issues"
+  },
   "scripts": {
     "postinstall": "node postinstall.js",
     "preuninstall": "node preuninstall.js"
   },
+  "license": "Apache-2.0",
+  "homepage": "https://github.com/NativeScript/nativescript-cordova-support",
+  "readmeFilename": "README.md",
   "nativescript": {
     "platforms": {
       "android": "4.0.0",
