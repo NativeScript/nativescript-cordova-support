@@ -66,3 +66,6 @@ The plugin uses NativeScript's hook mechanism to perform the following steps:
 This plugin hasn't been extensively tested with many Cordova plugins and you may encounter some issues along the way. Should you encounter anything extraordinary you can try the following rules of thumb:
 * Remove your `platforms` directory and try building again.
 * Remove your `node_modules` directory and try building again.
+
+### NPM
+You may experience issues when using NPM 4 or later. Try downgrading to 3.x with `npm i -g npm@3`
