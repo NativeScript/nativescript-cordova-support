@@ -352,6 +352,11 @@ ext.cdvMinSdkVersion = null
 ${pluginGradleExtensionsSection}
 
 dependencies {
+    def supportVer = "28.0.0"
+    if (project.hasProperty("supportVersion")) {
+        supportVer = supportVersion
+    }
+
     implementation fileTree(dir: '${LIBS_DIRECTORY_NAME}', include: '*.jar')
     ${subProjectDependenciesSection}
 }
@@ -389,8 +394,8 @@ function getStringBetween(str, start, end) {
 
 function getUnifiedAppCompatSupportContent(originalContent) {
     return originalContent
-        .replace(/(com.android.support:appcompat-v7:).*?(['"])/g, "$1$supportVersion$2")
-        .replace(/(com.android.support:support-v4:).*?(['"])/g, "$1$supportVersion$2");
+        .replace(/(com.android.support:appcompat-v7:).*?(['"])/g, "$1$supportVer$2")
+        .replace(/(com.android.support:support-v4:).*?(['"])/g, "$1$supportVer$2");
 }
 
 function getAndroidAppDir(platformsDirectory) {
