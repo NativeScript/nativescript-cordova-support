@@ -16,10 +16,10 @@
       }
     },
     "tns-ios": {
-      "version": "4.1.0"
+      "version": "5.4.0"
     },
     "tns-android": {
-      "version": "4.1.1"
+      "version": "5.4.0"
     }
   },
   "dependencies": {
@@ -32,7 +32,7 @@
     "nativescript-cordova-support": "file:../src",
     "nativescript-theme-core": "~1.0.4",
     "phonegap-plugin-barcodescanner": "https://github.com/mbektchiev/phonegap-plugin-barcodescanner/archive/7.1.2-fixed.tar.gz",
-    "tns-core-modules": "^4.1.0"
+    "tns-core-modules": "^5.4.1"
   },
   "devDependencies": {
     "babel-traverse": "6.4.5",
