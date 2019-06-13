@@ -183,6 +183,7 @@ function prepareForAddingCordovaPlugins(platform, pluginPackageName, platformDir
         fs.writeFileSync(path.join(mainDirectory, ANDROID_MANIFEST_FILE_NAME), `<?xml version='1.0' encoding='utf-8'?>
 <manifest android:hardwareAccelerated="true" android:versionCode="10000" android:versionName="1.0.0" package="${pluginPackageName}" xmlns:android="http://schemas.android.com/apk/res/android">
     <application>
+        <activity/>
     </application>
 
 </manifest>
@@ -232,6 +233,10 @@ function processCordovaProject(cordovaProjectDir, platform, pluginDataObjects, i
                     break;
                 case "java":
                     fse.copySync(fullSrcPath, fullDestPath, { filter: (src, dest) => src.indexOf(idStringComponent) === -1 });
+                    break;
+                case "AndroidManifest.xml":
+                    const androidManifestContent = fse.readFileSync(fullSrcPath).toString();
+                    fse.writeFileSync(fullDestPath, androidManifestContent.replace('<activity android:launchMode="singleTop" />', ''));
                     break;
                 default:
                     fse.copySync(fullSrcPath, fullDestPath);
@@ -347,6 +352,11 @@ ext.cdvMinSdkVersion = null
 ${pluginGradleExtensionsSection}
 
 dependencies {
+    def supportVer = "28.0.0"
+    if (project.hasProperty("supportVersion")) {
+        supportVer = supportVersion
+    }
+
     implementation fileTree(dir: '${LIBS_DIRECTORY_NAME}', include: '*.jar')
     ${subProjectDependenciesSection}
 }
@@ -384,8 +394,8 @@ function getStringBetween(str, start, end) {
 
 function getUnifiedAppCompatSupportContent(originalContent) {
     return originalContent
-        .replace(/(com.android.support:appcompat-v7:).*?(['"])/g, "$1$supportVersion$2")
-        .replace(/(com.android.support:support-v4:).*?(['"])/g, "$1$supportVersion$2");
+        .replace(/(com.android.support:appcompat-v7:).*?(['"])/g, "$1$supportVer$2")
+        .replace(/(com.android.support:support-v4:).*?(['"])/g, "$1$supportVer$2");
 }
 
 function getAndroidAppDir(platformsDirectory) {
