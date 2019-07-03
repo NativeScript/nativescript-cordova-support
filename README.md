@@ -1,3 +1,5 @@
+# This plugin is no longer supported by the NativeScript core team.
+
 # nativescript-cordova-support
 This is a NativeScript plugin that lets you use Cordova plugins in your NativeScript apps.
 
